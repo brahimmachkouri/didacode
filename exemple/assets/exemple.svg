@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 120" width="620" height="120" role="img" aria-labelledby="titre-schema description-schema">
+  <title id="titre-schema">Chaîne de production de Didacode</title>
+  <desc id="description-schema">Un document Markdown et ses ressources sont transformés par Didacode et sa feuille de style en un PDF aux polices incorporées.</desc>
+  <style>
+    .boite { fill: #F6F6F6; stroke: #1B2A41; stroke-width: 1.5; }
+    .accent { fill: #F3E5F5; stroke: #6A1B9A; stroke-width: 1.5; }
+    .titre { font-family: "EB Garamond", "Source Serif 4", serif; font-size: 13px; fill: #1B2A41; text-anchor: middle; }
+    .sous { font-family: "EB Garamond", "Source Serif 4", serif; font-size: 10px; fill: #777777; text-anchor: middle; }
+    .fleche { stroke: #6A1B9A; stroke-width: 1.5; fill: none; }
+  </style>
+
+  <rect class="boite" x="8" y="30" width="150" height="58" rx="4"/>
+  <text class="titre" x="83" y="55">Markdown</text>
+  <text class="sous" x="83" y="72">+ assets/</text>
+
+  <rect class="accent" x="235" y="30" width="150" height="58" rx="4"/>
+  <text class="titre" x="310" y="55">didacode.py</text>
+  <text class="sous" x="310" y="72">+ styles.css</text>
+
+  <rect class="boite" x="462" y="30" width="150" height="58" rx="4"/>
+  <text class="titre" x="537" y="55">PDF</text>
+  <text class="sous" x="537" y="72">polices incorporées</text>
+
+  <path class="fleche" d="M 162 59 L 226 59"/>
+  <path class="fleche" d="M 226 59 l -8 -4 l 0 8 z" fill="#6A1B9A"/>
+  <path class="fleche" d="M 389 59 L 453 59"/>
+  <path class="fleche" d="M 453 59 l -8 -4 l 0 8 z" fill="#6A1B9A"/>
+</svg>

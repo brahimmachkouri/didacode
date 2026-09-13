@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "didacode"
+version = "2.3.0"
+description = "Générateur de livrets PDF pédagogiques à partir de Markdown et de fichiers sources"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "fonts/licenses/*.txt"]
+authors = [
+    { name = "Brahim Machkouri" },
+]
+keywords = [
+    "education",
+    "markdown",
+    "pdf",
+    "teaching",
+    "weasyprint",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Education",
+    "Natural Language :: French",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Documentation",
+    "Topic :: Education",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+dependencies = [
+    "Markdown>=3.4",
+    "Pygments>=2.15",
+    "PyYAML>=6.0",
+    "WeasyPrint>=60",
+]
+
+[project.scripts]
+didacode = "didacode:main"
+
+[tool.setuptools]
+# Le dépôt reste exécutable avec `python didacode.py`. Dans la distribution,
+# sa racine devient le paquet `didacode`, ce qui place le script, le CSS, les
+# polices et les exemples dans le même dossier sans les dupliquer.
+packages = ["didacode"]
+package-dir = { didacode = "." }
+include-package-data = false
+
+[tool.setuptools.package-data]
+didacode = [
+    "styles.css",
+    "fonts/EBGaramond-VariableFont_wght.ttf",
+    "fonts/EBGaramond-Italic-VariableFont_wght.ttf",
+    "fonts/RobotoMono-VariableFont_wght.ttf",
+    "fonts/RobotoMono-Italic-VariableFont_wght.ttf",
+    "fonts/SourceSerif4-VariableFont_opsz,wght.ttf",
+    "fonts/SourceSerif4-Italic-VariableFont_opsz,wght.ttf",
+    "fonts/FiraCode-VariableFont_wght.ttf",
+    "fonts/*.md",
+    "fonts/licenses/*.txt",
+    "exemple/*.md",
+    "exemple/*.py",
+    "exemple/*.yaml",
+    "exemple/assets/*.svg",
+]

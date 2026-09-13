@@ -1,0 +1,149 @@
+name: CI et PDF de démonstration
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests — Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      - name: Installer Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Installer les bibliothèques système
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            libpango-1.0-0 \
+            libpangoft2-1.0-0 \
+            libharfbuzz0b \
+            libharfbuzz-subset0
+
+      - name: Installer Didacode
+        run: python -m pip install .
+
+      - name: Vérifier la commande installée
+        run: |
+          didacode --version
+          python -m didacode --version
+
+      - name: Lancer les tests
+        run: python -m unittest discover -s tests -v
+
+  pdf:
+    name: Construire le PDF de démonstration
+    needs: tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      - name: Installer Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Installer les bibliothèques système
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            libpango-1.0-0 \
+            libpangoft2-1.0-0 \
+            libharfbuzz0b \
+            libharfbuzz-subset0 \
+            poppler-utils
+
+      - name: Installer Didacode
+        run: python -m pip install .
+
+      - name: Générer le PDF
+        run: |
+          mkdir -p dist
+          didacode \
+            --example \
+            --output dist/didacode-exemple.pdf \
+            --title "Démonstration de Didacode" \
+            --author "Brahim Machkouri"
+
+      - name: Vérifier le PDF et ses polices
+        run: |
+          pdfinfo dist/didacode-exemple.pdf
+          pdffonts dist/didacode-exemple.pdf | tee /tmp/didacode-polices.txt
+          grep -Eq "EB-Garamond|EBGaramond" /tmp/didacode-polices.txt
+          grep -Eq "EB-Garamond-Bold" /tmp/didacode-polices.txt
+          grep -Eq "EB-Garamond-Bold-Italic" /tmp/didacode-polices.txt
+          grep -Eq "Roboto-Mono|RobotoMono" /tmp/didacode-polices.txt
+          grep -Eq "Roboto-Mono-Bold" /tmp/didacode-polices.txt
+          grep -Eq "Roboto-Mono-Italic" /tmp/didacode-polices.txt
+          polices_inattendues="$(
+            tail -n +3 /tmp/didacode-polices.txt \
+              | awk '{print $1}' \
+              | sed -E 's/^[A-Z]{6}\+//' \
+              | grep -Ev '^(EB-Garamond|EBGaramond|Roboto-Mono|RobotoMono)' \
+              || true
+          )"
+          if [ -n "$polices_inattendues" ]; then
+            echo "Polices inattendues incorporées au PDF :"
+            echo "$polices_inattendues"
+            exit 1
+          fi
+
+      - name: Conserver le PDF comme artefact
+        uses: actions/upload-artifact@v7
+        with:
+          name: didacode-exemple
+          path: dist/didacode-exemple.pdf
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publier le PDF dans la GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: pdf
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Télécharger le PDF validé
+        uses: actions/download-artifact@v8
+        with:
+          name: didacode-exemple
+          path: dist
+
+      - name: Créer ou mettre à jour la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" \
+              dist/didacode-exemple.pdf \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              dist/didacode-exemple.pdf \
+              --verify-tag \
+              --generate-notes \
+              --title "Didacode $GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY"
+          fi

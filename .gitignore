@@ -1,0 +1,52 @@
+# Fichiers produits
+output/
+*.pdf
+debug.html
+examples/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Caches et fichiers temporaires Python
+__pycache__/
+*.py[cod]
+*$py.class
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+.hypothesis/
+.tox/
+.nox/
+
+# Couverture et rapports de tests
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytestdebug.log
+
+# Environnements virtuels et configuration locale
+.venv/
+venv/
+.env/
+env/
+ENV/
+.env
+.env.*
+!.env.example
+
+# Construction du paquet Python
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Outils de développement
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -1,0 +1,71 @@
+# =============================================================================
+# Configuration type de Didacode
+#
+#   1. Copier ce fichier sous un autre nom : cp exemple/config.exemple.yaml manuel.yaml
+#   2. Adapter les valeurs ci-dessous
+#   3. Générer : python didacode.py --config manuel.yaml
+#
+# Les chemins sont relatifs à CE fichier, pas au dossier depuis lequel la
+# commande est lancée. Les options de la ligne de commande sont prioritaires
+# sur les valeurs indiquées ici.
+#
+# Le dossier de ce fichier est aussi la racine du projet : aucune image, aucune
+# ressource ne sera chargée au-dessus de lui, ni depuis le réseau.
+# =============================================================================
+
+
+# --- Page de garde -----------------------------------------------------------
+
+title: Python
+subtitle: Antisèche et corrigé de l'évaluation
+author: Prénom Nom
+institution: IUT Informatique
+
+# Date affichée. Si la clé est absente, la date du jour est utilisée,
+# en français. Mettre des guillemets si la valeur contient un deux-points.
+# date: 12 septembre 2026
+
+
+# --- Contenu -----------------------------------------------------------------
+
+# Fichiers Markdown, dans l'ordre où ils doivent apparaître.
+# Un seul fichier peut aussi s'écrire : markdown: antiseche.md
+markdown:
+  - exemple.md
+
+# Fichiers de code source à annexer, avec coloration syntaxique.
+# Le langage est déduit de l'extension. Supprimer la clé si inutile.
+code:
+  - exercice1.py
+  - exercice2.py
+
+
+# --- Sortie ------------------------------------------------------------------
+
+# Un nom sans dossier est rangé dans output/, à côté de ce fichier.
+# Les dossiers manquants sont créés.
+output: manuel.pdf
+
+# Feuille de style. Par défaut : le styles.css livré avec Didacode.
+# css: styles.css
+
+# Dossier des polices à incorporer. Par défaut : le fonts/ livré avec le script.
+# fonts: fonts
+
+# Sauvegarde du HTML intermédiaire, utile pour déboguer la mise en page.
+# html: debug.html
+
+
+# --- Structure ---------------------------------------------------------------
+
+# Ces quatre clés attendent true ou false, sans guillemets.
+# cover: true        # page de garde
+# toc: true          # table des matières
+# numbered: false    # numérotation des titres (Chapitre 1 —, 1.1, 1.1.1)
+
+# Sauts de page automatiques :
+#   section  chaque titre de niveau 2 démarre une page (défaut)
+#   chapter  seuls les titres de niveau 1 démarrent une page
+#   none     aucun saut automatique, seuls les --- en produisent
+# page_breaks: section
+# tags: false        # PDF balisé pour l'accessibilité (fichier plus lourd)
