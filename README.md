@@ -1,10 +1,8 @@
 # Didacode
 
-Didacode transforme des cours Markdown et leurs fichiers sources en livrets PDF, hors ligne et prêts à distribuer.
+À partir de fichiers Markdown et de fichiers de code source, Didacode produit un livret PDF avec page de garde, table des matières cliquable, encadrés pédagogiques et coloration syntaxique multilingue : supports de cours, antisèches, corrigés d'exercices.
 
-Générateur de PDF pédagogiques utilisant **WeasyPrint** et **Pygments**.
-
-À partir de fichiers Markdown et de fichiers de code source, Didacode produit un livret avec page de garde, table des matières cliquable, encadrés pédagogiques et coloration syntaxique multilingue : supports de cours, antisèches, corrigés d'exercices.
+Ce générateur de PDF utilise **WeasyPrint** et **Pygments**.
 
 ## 📦 Installation
 
