@@ -1,6 +1,6 @@
 # Didacode
 
-À partir de fichiers Markdown et de fichiers de code source, Didacode produit un livret PDF avec page de garde, table des matières cliquable, encadrés pédagogiques et coloration syntaxique multilingue : supports de cours, antisèches, corrigés d'exercices.
+À partir de fichiers Markdown et de fichiers de code source, Didacode produit un livret PDF avec page de garde, table des matières cliquable, encadrés pédagogiques et coloration syntaxique multilingue : supports de cours, antisèches, corrigés d'exercices, hors ligne.
 
 Ce générateur de PDF utilise **WeasyPrint** et **Pygments**.
 
