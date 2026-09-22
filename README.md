@@ -65,9 +65,22 @@ EB Garamond, Roboto Mono et Fira Code restent livrées comme alternatives. Fira 
 
 Les notices d'attribution et les textes complets des licences se trouvent dans `fonts/NOTICE.md` et `fonts/licenses/`. Les polices peuvent être utilisées, incorporées et redistribuées avec le logiciel conformément à leurs licences propres ; elles ne passent pas sous la licence MIT du code.
 
-Pour choisir les familles sans modifier `styles.css`, utiliser `font_priority` dans le fichier YAML. Chaque rôle accepte un nom ou une liste ordonnée ; les familles demandées sont placées avant la pile du thème :
+#### Choisir les polices dans le YAML
+
+Deux options distinctes contrôlent les polices sans modifier `styles.css` :
+
+| Option | Effet |
+|---|---|
+| `fonts` | Dossier contenant les fichiers à déclarer avec `@font-face` et à incorporer lorsqu'ils sont utilisés. Par défaut, Didacode emploie son dossier `fonts/` livré avec le paquet. |
+| `font_priority` | Surcharge en mémoire l'ordre des familles pour le texte (`serif`), les titres et l'interface (`sans`) et le code (`mono`). Le fichier CSS reste inchangé. |
+
+Chaque rôle de `font_priority` accepte un nom unique ou une liste ordonnée :
 
 ```yaml
+# Facultatif : chemin relatif au fichier YAML.
+# Omettre cette ligne pour employer les fontes livrées avec Didacode.
+# fonts: mes-fontes
+
 font_priority:
   serif: DejaVu Serif
   sans:
@@ -76,7 +89,13 @@ font_priority:
   mono: JetBrains Mono
 ```
 
-Une famille n'a pas besoin d'être livrée dans `fonts/` : si elle est installée dans le système, WeasyPrint peut l'utiliser. Si elle est introuvable, la famille suivante est essayée, puis la pile normale de `styles.css`. Le PDF n'est donc reproductible sur une autre machine que si la police choisie est aussi incorporée ou installée sur cette machine.
+Les valeurs sont les noms de familles, pas les noms de fichiers. Pour chaque rôle, Didacode essaie dans l'ordre :
+
+1. la première famille indiquée dans `font_priority` ;
+2. les familles suivantes, lorsqu'une liste est fournie ;
+3. la pile normale définie par `styles.css`.
+
+Une famille n'a pas besoin d'être présente dans le dossier `fonts` : si elle est installée dans le système, WeasyPrint peut l'utiliser et l'incorporer au PDF. Si elle est introuvable, le repli suivant est essayé automatiquement. Le rendu ne sera toutefois reproductible sur une autre machine que si cette police y est aussi incorporée ou installée, et son utilisation reste soumise à sa propre licence.
 
 Pour incorporer une nouvelle famille, poser ses fichiers dans `fonts/`, ajouter son préfixe au dictionnaire `FAMILLES` de `didacode.py`, puis conserver sa licence et sa notice. Si le dossier est absent ou vide, l'outil le signale et utilise les polices disponibles dans le système, avec un rendu potentiellement différent.
 
@@ -136,12 +155,20 @@ author: Sub
 institution: IUT
 output: manuel.pdf
 
+# Insère un verso vide entre la couverture et la table des matières.
+blank_page: true
+
 markdown:
   - antiseche.md
 
 code:
   - exercice1.py
   - exercice2.py
+
+font_priority:
+  serif: DejaVu Serif
+  sans: DejaVu Sans
+  mono: JetBrains Mono
 ```
 
 Un fichier `exemple/config.exemple.yaml` commenté est livré avec Didacode : le copier sous un autre nom et l'adapter. `didacode --create-examples` copie dans `examples/` les fichiers de démonstration réellement livrés dans `exemple/` (`exemple.md`, `config.exemple.yaml`, les deux exercices et `assets/`).
@@ -159,11 +186,11 @@ Un fichier `exemple/config.exemple.yaml` commenté est livré avec Didacode : le
 | `markdown` | Fichier ou liste de fichiers Markdown |
 | `code` | Fichier ou liste de fichiers de code à annexer |
 | `css` | Feuille de style à utiliser (défaut : `styles.css`) |
-| `fonts` | Dossier des polices à incorporer (défaut : `fonts/`) |
-| `font_priority` | Familles prioritaires pour `serif`, `sans` et `mono` |
+| `fonts` | Dossier des fichiers de polices à déclarer et incorporer (défaut : fontes livrées) |
+| `font_priority` | Nom ou liste de familles prioritaires pour `serif`, `sans` et `mono` |
 | `html` | Sauvegarde du HTML intermédiaire (débogage) |
 | `cover` | `false` pour supprimer la page de garde |
-| `blank_page` | `true` pour insérer une page blanche après la page de garde |
+| `blank_page` | `true` pour insérer une page blanche après la couverture et avant la table des matières ; ignoré si `cover: false` |
 | `toc` | `false` pour supprimer la table des matières |
 | `numbered` | `true` pour numéroter les titres |
 | `page_breaks` | Sauts de page automatiques : `section`, `chapter` ou `none` |
