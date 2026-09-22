@@ -1,983 +1,836 @@
-/*
- * ============================================================================
- * DIDACODE - FEUILLE DE STYLE ACADÉMIQUE, TYPE MANUEL O'REILLY / EYROLLES
- * Pour WeasyPrint - Impression professionnelle
- * ============================================================================
- */
+/* ==========================================================================
+   DidaCode — feuille de style « manuel technique »
+   Cible : WeasyPrint (impression A4) + Pygments
+   --------------------------------------------------------------------------
+   Contrat de classes attendu par didacode.py :
+     .cover-page .title .subtitle .author .date .institution
+     .toc .toc-titre a.toc-entry .toc-title .toc-leader .level-1/2/3
+     .section .section-chapter .section-section .premiere-section
+     .code-header .filename .code-block .highlight
+     blockquote.info / .warning / .important / .reminder
+     .enonce .explication .correction .annexe
+     body.sauts-chapter / .sauts-section / .sauts-none
+   ========================================================================== */
 
-/* ============================================================================
-   1. CONFIGURATION DE LA PAGE
-   ============================================================================ */
+
+/* ==========================================================================
+   1. Variables
+   ========================================================================== */
+
+:root {
+    /* Texte */
+    --encre:            #1a1a1a;
+    --encre-douce:      #4a4a4a;
+    --encre-faible:     #767676;
+
+    /* Filets et fonds */
+    --filet:            #d4d4d4;
+    --filet-fort:       #a3a3a3;
+    --fond-doux:        #f7f7f5;
+
+    /* Accent général */
+    --accent:           #1f4e79;
+
+    /* Encadrés pédagogiques */
+    --info-trait:       #1f6feb;
+    --info-fond:        #eef4fd;
+    --important-trait:  #6d28d9;
+    --important-fond:   #f4f0fe;
+    --warning-trait:    #b45309;
+    --warning-fond:     #fdf5e7;
+    --reminder-trait:   #0f766e;
+    --reminder-fond:    #eefaf8;
+
+    /* Typographie. Les familles de tête sont livrées dans fonts/ sous
+       licence OFL ; les replis restent eux aussi redistribuables. */
+    --serif: "Source Serif 4", "Bitstream Charter", "DejaVu Serif",
+             "Liberation Serif", serif;
+    --sans:  "Fira Sans", "Source Sans 3", "DejaVu Sans",
+             "Liberation Sans", sans-serif;
+    --mono:  "Fira Mono", "JetBrains Mono", "DejaVu Sans Mono",
+             "Liberation Mono", monospace;
+
+    --corps: 10.5pt;
+    --interligne: 1.55;
+}
+
+/* didacode.py ajoute automatiquement les @font-face correspondant aux
+   fichiers trouvés dans le dossier configuré par la clé YAML « fonts ». */
+
+
+/* ==========================================================================
+   2. Pages
+   ========================================================================== */
 
 @page {
     size: A4;
-    margin: 2.5cm 2cm 2.5cm 2cm;
-    
+    margin: 22mm 20mm 20mm 20mm;
+
+    @top-right {
+        content: string(chapitre-courant);
+        font-family: var(--sans);
+        font-size: 8pt;
+        color: var(--encre-faible);
+        padding-bottom: 3mm;
+        border-bottom: 0.4pt solid var(--filet);
+        width: 100%;
+        text-align: right;
+        vertical-align: bottom;
+    }
+
     @bottom-center {
         content: counter(page);
-        font-family: "EB Garamond", Georgia, "DejaVu Serif", serif;
-        font-size: 11pt;
-        color: #555555;
-        padding-top: 0.5cm;
-        border-top: 0.5pt solid #cccccc;
-        /* sans width, le filet ne fait que la largeur du numéro
-           et apparaît comme un petit tiret isolé */
-        width: 100%;
+        font-family: var(--sans);
+        font-size: 9pt;
+        color: var(--encre-douce);
+        padding-top: 4mm;
     }
 }
 
+/* Première page du document : ni en-tête ni pagination. */
 @page :first {
-    @bottom-center {
-        content: none;
-    }
+    @top-right  { content: none; border: none; }
+    @bottom-center { content: none; }
 }
 
-/* ============================================================================
-   2. TYPOGRAPHIE DE BASE
-   ============================================================================ */
-
-:root {
-    /* Polices. Les fichiers présents dans fonts/ sont incorporés au PDF par
-       le script : le rendu est alors identique sur toutes les machines.
-       Pour changer de police, remplacer les fichiers et ces deux lignes. */
-    --police-texte: "EB Garamond", "Source Serif 4", Georgia, "DejaVu Serif", serif;
-    --police-code: "Roboto Mono", "Fira Code", "JetBrains Mono", "DejaVu Sans Mono", monospace;
-
-    /* Palette de couleurs académique */
-    --bleu-nuit: #1B2A41;
-    --violet: #6A1B9A;
-    --orange: #E67E22;
-    --jaune-doux: #F4D03F;
-    --gris: #777777;
-    --gris-clair: #F6F6F6;
-    --noir: #222222;
-    --blanc: #FFFFFF;
-    
-    /* Couleurs pour le code */
-    --code-keyword: #1B2A41;
-    --code-string: #2E7D32;
-    --code-comment: #777777;
-    --code-function: #6A1B9A;
-    --code-number: #E67E22;
-    --code-border: #4A90D9;
+/* Page de couverture : pleine page, sans marge ni ornement. */
+@page couverture {
+    margin: 0;
+    @top-right     { content: none; border: none; }
+    @bottom-center { content: none; }
 }
+
+/* Page blanche facultative : rigoureusement vide, donc sans en-tête ni
+   numéro. Elle compte malgré tout dans la pagination, comme au tirage. */
+@page blanche {
+    @top-right     { content: none; border: none; }
+    @bottom-center { content: none; }
+}
+
+
+/* ==========================================================================
+   3. Base
+   ========================================================================== */
 
 html {
-    font-size: 11pt;
+    font-size: var(--corps);
 }
 
 body {
-    font-family: var(--police-texte);
-    font-size: 11pt;
-    line-height: 1.45;
-    color: var(--noir);
-    text-align: justify;
-    hyphens: auto;
-    -webkit-hyphens: auto;
-    orphans: 3;
-    widows: 3;
+    /* Les marges viennent de @page ; sans cette remise à zéro, la marge
+       par défaut du navigateur décale la couverture pleine page. */
+    margin: 0;
+    padding: 0;
+    font-family: var(--serif);
+    font-size: var(--corps);
+    line-height: var(--interligne);
+    color: var(--encre);
+    /* Alignement à gauche : sans césure française fiable, le justifié
+       creuse des blancs irréguliers dans les paragraphes techniques. */
+    text-align: left;
+    widows: 2;
+    orphans: 2;
 }
-
-/* ============================================================================
-   3. PAGE DE GARDE
-   ============================================================================ */
-
-.cover-page {
-    /* pas de "page: chapter" ici : la page nommée l'emporterait sur @page :first
-       et un numéro s'afficherait sur la couverture */
-    page-break-after: always;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    text-align: center;
-    padding: 3cm 1cm;
-}
-
-.cover-page .title {
-    font-size: 28pt;
-    font-weight: bold;
-    color: var(--bleu-nuit);
-    margin-bottom: 1cm;
-    line-height: 1.2;
-    letter-spacing: 0.02em;
-}
-
-.cover-page .subtitle {
-    font-size: 16pt;
-    color: var(--violet);
-    margin-bottom: 2cm;
-    font-style: italic;
-}
-
-.cover-page .author {
-    font-size: 14pt;
-    color: var(--gris);
-    margin-top: 2cm;
-}
-
-.cover-page .date {
-    font-size: 12pt;
-    color: var(--gris);
-    margin-top: 0.5cm;
-}
-
-.cover-page .institution {
-    font-size: 12pt;
-    color: var(--bleu-nuit);
-    margin-top: 3cm;
-    padding-top: 1cm;
-    border-top: 2pt solid var(--bleu-nuit);
-}
-
-/* ============================================================================
-   4. TABLE DES MATIÈRES
-   ============================================================================ */
-
-.toc {
-    page-break-after: always;
-    /*padding-top: 1cm;*/
-    padding-top: 0;
-    margin-top: 0;
-}
-
-.toc h1 {
-    font-size: 22pt;
-    color: var(--bleu-nuit);
-    text-align: center;
-    margin-bottom: 1cm;
-    border-bottom: none;
-    margin-top: 0;
-    page-break-before: avoid;
-}
-
-/* Chaque entrée est un lien : c'est lui qui porte le numéro de page.
-   Important : ne PAS mettre display:flex ici. WeasyPrint n'arrive plus à
-   résoudre target-counter() dans un conteneur flex (le numéro affiché
-   retombe à 0). On utilise donc un bloc + un float pour aligner à droite. */
-a.toc-entry {
-    display: block;
-    break-inside: avoid;
-    page-break-inside: avoid;
-    margin-bottom: 0.4cm;
-    line-height: 1.4;
-    text-decoration: none;
-    border-bottom: none;
-    color: var(--noir);
-}
-
-/* Numéro de page calculé par WeasyPrint à partir de la cible du lien */
-a.toc-entry::after {
-    content: target-counter(attr(href url), page);
-    float: right;
-    font-family: "EB Garamond", Georgia, "DejaVu Serif", serif;
-    color: var(--gris);
-    padding-left: 0.4cm;
-}
-
-a.toc-entry.level-1 {
-    font-weight: bold;
-    font-size: 12pt;
-    margin-top: 0.6cm;
-    color: var(--bleu-nuit);
-}
-
-a.toc-entry.level-2 {
-    padding-left: 1cm;
-    font-size: 11pt;
-}
-
-a.toc-entry.level-3 {
-    padding-left: 2cm;
-    font-size: 10pt;
-    color: var(--gris);
-}
-
-.toc-leader {
-    display: none;
-}
-
-/* ============================================================================
-   5. HIÉRARCHIE DES TITRES
-   ============================================================================ */
-
-h1, h2, h3, h4, h5, h6 {
-    font-family: var(--police-texte);
-    font-weight: bold;
-    orphans: 4;
-    widows: 4;
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-/* Titre de chapitre (H1) */
-h1 {
-    font-size: 24pt;
-    color: var(--bleu-nuit);
-    text-align: center;
-    page-break-before: always;
-    break-before: page;
-    margin-top: 3cm;
-    margin-bottom: 1.5cm;
-    padding-bottom: 0.5cm;
-    border-bottom: 3pt solid var(--bleu-nuit);
-    letter-spacing: 0.03em;
-}
-
-/* Le tout premier titre du document ne change pas de page : la table des
-   matières s'est déjà terminée par un saut, une règle de plus laisserait une
-   page blanche. L'exception est portée par .premiere-section, posée par le
-   script sur la première section seulement : avec :first-of-type seul, elle
-   s'appliquait à chaque fichier et plus aucun chapitre ne changeait de page. */
-.premiere-section > h1:first-child {
-    page-break-before: avoid;
-    break-before: auto;
-}
-
-/* Sous-titre principal (H2) */
-h2 {
-    font-size: 16pt;
-    color: var(--bleu-nuit);
-    margin-top: 1.2cm;
-    margin-bottom: 0.6cm;
-    padding-bottom: 0.2cm;
-    border-bottom: 1pt solid var(--bleu-nuit);
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-/* Sous-section (H3) */
-h3 {
-    font-size: 13pt;
-    color: var(--violet);
-    margin-top: 0.8cm;
-    margin-bottom: 0.4cm;
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-/* Sous-sous-section (H4) */
-h4 {
-    font-size: 12pt;
-    color: var(--noir);
-    font-style: italic;
-    margin-top: 0.6cm;
-    margin-bottom: 0.3cm;
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-h2, h3, h4 {
-    page-break-after: avoid;
-    break-after: avoid;
-    page-break-inside: avoid;
-    break-inside: avoid;
-    /* Astuce : forcer un bloc minimum avec le contenu suivant */
-    orphans: 4;
-    widows: 4;
-}
-
-h5, h6 {
-    font-size: 11pt;
-    color: var(--gris);
-    margin-top: 0.5cm;
-    margin-bottom: 0.2cm;
-}
-
-/* ============================================================================
-   6. PARAGRAPHES ET TEXTE
-   ============================================================================ */
 
 p {
-    margin-top: 0;
-    margin-bottom: 0.5cm;
-    text-align: justify;
-    hyphens: auto;
-    orphans: 3;
-    widows: 3;
+    margin: 0 0 0.75em 0;
 }
 
-/* Premier paragraphe après un titre : pas d'indentation */
-h1 + p, h2 + p, h3 + p, h4 + p {
-    text-indent: 0;
-}
-
-/* Paragraphes suivants : légère indentation */
-p + p {
-    text-indent: 0.7cm;
-    margin-top: 0;
-}
-
-/* ============================================================================
-   7. LISTES
-   ============================================================================ */
-
-ul, ol {
-    margin-top: 0.3cm;
-    margin-bottom: 0.5cm;
-    padding-left: 1.2cm;
-}
-
-li {
-    margin-bottom: 0.2cm;
-    text-align: justify;
-}
-
-li > ul, li > ol {
-    margin-top: 0.2cm;
-    margin-bottom: 0.2cm;
-}
-
-/* Listes à puces personnalisées */
-ul {
-    list-style-type: none;
-}
-
-ul > li::before {
-    content: "›";
-    color: var(--violet);
-    font-weight: bold;
-    display: inline-block;
-    width: 0.6cm;
-    margin-left: -0.8cm;
-}
-
-/* Listes numérotées */
-ol {
-    list-style-type: decimal;
-}
-
-ol > li::marker {
-    color: var(--bleu-nuit);
-    font-weight: bold;
-}
-
-/* ============================================================================
-   8. BLOCS DE CODE - STYLE ACADÉMIQUE PROFESSIONNEL
-   ============================================================================ */
-
-/* Conteneur de code */
-pre {
-    font-family: var(--police-code);
-    font-size: 6.7pt;
-    line-height: 1.35;
-    background-color: var(--gris-clair);
-    border-left: 4pt solid var(--code-border);
-    border-radius: 0 4pt 4pt 0;
-    padding: 0.5cm 0.6cm;
-    margin: 0.5cm 0 0.5cm 1cm;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-/* Code inline */
-code {
-    font-family: var(--police-code);
-    /* Fira Code a une hauteur d'x plus grande que la police de texte :
-       sans cette baisse, le code dans le fil du texte paraît surdimensionné. */
-    font-size: 9.5pt;
-    background-color: #F0F0F0;
-    padding: 0.05cm 0.15cm;
-    border-radius: 2pt;
-    color: var(--violet);
-}
-
-pre code {
-    background-color: transparent;
-    padding: 0;
-    border-radius: 0;
-    color: inherit;
-}
-
-/* ============================================================================
-   9. SYNTAX HIGHLIGHTING (Pygments compatible)
-   ============================================================================ */
-
-/* Mots-clés (def, class, if, for, return, import, etc.) */
-.highlight .k,   /* Keyword */
-.highlight .kn,  /* Keyword.Namespace */
-.highlight .kd,  /* Keyword.Declaration */
-.highlight .kc,  /* Keyword.Constant */
-.highlight .kr,  /* Keyword.Reserved */
-.highlight .kt,  /* Keyword.Type */
-.highlight .kp   /* Keyword.Pseudo */
-{
-    color: var(--code-keyword);
-    font-weight: bold;
-}
-
-/* Chaînes de caractères */
-.highlight .s,   /* String */
-.highlight .s1,  /* String.Single */
-.highlight .s2,  /* String.Double */
-.highlight .sb,  /* String.Backtick */
-.highlight .sc,  /* String.Char */
-.highlight .sd,  /* String.Doc */
-.highlight .se,  /* String.Escape */
-.highlight .sh,  /* String.Heredoc */
-.highlight .si,  /* String.Interpol */
-.highlight .sx,  /* String.Other */
-.highlight .sr,  /* String.Regex */
-.highlight .ss   /* String.Symbol */
-{
-    color: var(--code-string);
-}
-
-/* Commentaires */
-.highlight .c,   /* Comment */
-.highlight .c1,  /* Comment.Single */
-.highlight .cm,  /* Comment.Multiline */
-.highlight .cp,  /* Comment.Preproc */
-.highlight .cs,  /* Comment.Special */
-.highlight .ch   /* Comment.Hashbang */
-{
-    color: var(--code-comment);
-    font-style: italic;
-}
-
-/* Noms de fonctions et méthodes */
-.highlight .nf,  /* Name.Function */
-.highlight .fm,  /* Name.Function.Magic */
-.highlight .nc,  /* Name.Class */
-.highlight .nd,  /* Name.Decorator */
-.highlight .ni,  /* Name.Entity */
-.highlight .ne   /* Name.Exception */
-{
-    color: var(--code-function);
-    font-weight: bold;
-}
-
-/* Nombres */
-.highlight .m,   /* Number */
-.highlight .mi,  /* Number.Integer */
-.highlight .mf,  /* Number.Float */
-.highlight .mh,  /* Number.Hex */
-.highlight .mo,  /* Number.Oct */
-.highlight .mb,  /* Number.Bin */
-.highlight .il   /* Number.Integer.Long */
-{
-    color: var(--code-number);
-}
-
-/* Opérateurs */
-.highlight .o,   /* Operator */
-.highlight .ow   /* Operator.Word */
-{
-    color: var(--bleu-nuit);
-}
-
-/* Variables et noms */
-.highlight .n,   /* Name */
-.highlight .na,  /* Name.Attribute */
-.highlight .nb,  /* Name.Builtin */
-.highlight .bp,  /* Name.Builtin.Pseudo */
-.highlight .nv,  /* Name.Variable */
-.highlight .vc,  /* Name.Variable.Class */
-.highlight .vg,  /* Name.Variable.Global */
-.highlight .vi   /* Name.Variable.Instance */
-{
-    color: var(--noir);
-}
-
-/* Builtins spéciaux */
-.highlight .nb {
-    color: #0D47A1;
-}
-
-/* Ponctuation */
-.highlight .p {
-    color: var(--noir);
-}
-
-/* Préprocesseur C/C++, directives et inclusions */
-.highlight .cp,   /* Comment.Preproc */
-.highlight .cpf   /* Comment.PreprocFile */
-{
-    color: var(--code-function);
-}
-
-/* Balises, attributs et espaces de noms (HTML, XML, PHP, Java, JS) */
-.highlight .nt,   /* Name.Tag */
-.highlight .nn,   /* Name.Namespace */
-.highlight .nx,   /* Name.Other */
-.highlight .py,   /* Name.Property */
-.highlight .nl    /* Name.Label */
-{
-    color: var(--noir);
-}
-
-/* Constantes et étiquettes (assembleur, Java, C) */
-.highlight .no    /* Name.Constant */
-{
-    color: var(--bleu-nuit);
-}
-
-/* Jetons non reconnus : lisibles plutôt que rouges */
-.highlight .err,  /* Error */
-.highlight .x,    /* Other */
-.highlight .w     /* Whitespace */
-{
-    color: var(--noir);
-    background: none;
-    border: none;
-}
-
-/* Texte générique */
-.highlight .g,
-.highlight .gd,
-.highlight .ge,
-.highlight .gr,
-.highlight .gh,
-.highlight .gi,
-.highlight .go,
-.highlight .gp,
-.highlight .gs,
-.highlight .gu,
-.highlight .gt {
-    color: var(--noir);
-}
-
-/* ============================================================================
-   10. TABLEAUX
-   ============================================================================ */
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0.6cm 0;
-    font-size: 10pt;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-thead {
-    background-color: var(--bleu-nuit);
-    color: var(--blanc);
-}
-
-th {
-    font-weight: bold;
-    padding: 0.3cm 0.4cm;
-    text-align: left;
-    border: 1pt solid var(--bleu-nuit);
-}
-
-td {
-    padding: 0.25cm 0.4cm;
-    border: 0.5pt solid #cccccc;
-    vertical-align: top;
-}
-
-tbody tr:nth-child(even) {
-    background-color: #F8F9FA;
-}
-
-tbody tr:hover {
-    background-color: #E8F4FD;
-}
-
-/* Caption de tableau */
-caption {
-    font-style: italic;
-    color: var(--gris);
-    text-align: left;
-    margin-bottom: 0.3cm;
-    font-size: 10pt;
-}
-
-/* ============================================================================
-   11. ENCADRÉS PÉDAGOGIQUES
-   ============================================================================ */
-
-/* Encadré d'information */
-.info-box, blockquote.info {
-    background-color: #E3F2FD;
-    border-left: 4pt solid var(--bleu-nuit);
-    padding: 0.5cm;
-    margin: 0.5cm 0;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-.info-box::before, blockquote.info::before {
-    content: "ℹ Information";
-    display: block;
-    font-weight: bold;
-    color: var(--bleu-nuit);
-    margin-bottom: 0.3cm;
-}
-
-/* Encadré d'avertissement */
-.warning-box, blockquote.warning {
-    background-color: #FFF3E0;
-    border-left: 4pt solid var(--orange);
-    padding: 0.5cm;
-    margin: 0.5cm 0;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-.warning-box::before, blockquote.warning::before {
-    content: "Attention";
-    display: block;
-    font-weight: bold;
-    color: var(--orange);
-    margin-bottom: 0.3cm;
-}
-
-/* Encadré de rappel */
-.reminder-box, blockquote.reminder {
-    background-color: #FFFDE7;
-    border-left: 4pt solid var(--jaune-doux);
-    padding: 0.5cm;
-    margin: 0.5cm 0;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-.reminder-box::before, blockquote.reminder::before {
-    content: "Rappel";
-    display: block;
-    font-weight: bold;
-    color: #F57F17;
-    margin-bottom: 0.3cm;
-}
-
-/* Encadré important */
-.important-box, blockquote.important {
-    background-color: #F3E5F5;
-    border-left: 4pt solid var(--violet);
-    padding: 0.5cm;
-    margin: 0.5cm 0;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-.important-box::before, blockquote.important::before {
-    content: "Important";
-    display: block;
-    font-weight: bold;
-    color: var(--violet);
-    margin-bottom: 0.3cm;
-}
-
-/* Citation standard */
-blockquote {
-    border-left: 3pt solid var(--gris);
-    padding-left: 0.6cm;
-    margin: 0.5cm 0 0.5cm 0.5cm;
-    font-style: italic;
-    color: #555555;
-}
-
-blockquote p {
-    margin-bottom: 0.2cm;
-}
-
-/* ============================================================================
-   12. LIENS ET RÉFÉRENCES
-   ============================================================================ */
+strong { font-weight: 600; }
+em     { font-style: italic; }
 
 a {
-    color: var(--bleu-nuit);
+    color: var(--accent);
     text-decoration: none;
-    border-bottom: 0.5pt dotted var(--bleu-nuit);
 }
 
-a:hover {
-    color: var(--violet);
+/* En impression, une URL invisible est une information perdue. */
+a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-family: var(--mono);
+    font-size: 0.78em;
+    color: var(--encre-faible);
+    word-break: break-all;
+}
+/* ... sauf dans la table des matières et les titres. */
+.toc a[href^="http"]::after,
+h1 a[href^="http"]::after,
+h2 a[href^="http"]::after,
+h3 a[href^="http"]::after {
+    content: none;
 }
 
-/* Pour l'impression, afficher l'URL */
-@media print {
-    a[href^="http"]::after {
-        content: " [" attr(href) "]";
-        font-size: 8pt;
-        color: var(--gris);
-    }
-}
-
-/* ============================================================================
-   13. IMAGES ET FIGURES
-   ============================================================================ */
-
-figure {
-    margin: 0.8cm 0;
-    text-align: center;
-    page-break-inside: avoid;
-    break-inside: avoid;
+hr {
+    border: none;
+    border-top: 0.6pt solid var(--filet);
+    margin: 1.8em 0;
 }
 
 img {
     max-width: 100%;
-    height: auto;
+    break-inside: avoid;
 }
 
-figcaption {
-    font-style: italic;
+
+/* ==========================================================================
+   4. Couverture
+   ========================================================================== */
+
+.cover-page {
+    page: couverture;
+    break-after: page;
+    height: 297mm;
+    padding: 55mm 24mm 24mm 24mm;
+    box-sizing: border-box;
+    border-top: 9mm solid var(--accent);
+    font-family: var(--sans);
+}
+
+.cover-page .title {
+    font-size: 30pt;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--encre);
+    margin-bottom: 8mm;
+}
+
+.cover-page .subtitle {
+    font-size: 14pt;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--encre-douce);
+    padding-top: 6mm;
+    border-top: 0.8pt solid var(--filet-fort);
+    margin-bottom: 40mm;
+}
+
+.cover-page .author {
+    font-size: 13pt;
+    font-weight: 600;
+    margin-bottom: 2mm;
+}
+
+.cover-page .institution {
+    font-size: 11pt;
+    color: var(--encre-douce);
+    margin-bottom: 2mm;
+}
+
+.cover-page .date {
     font-size: 10pt;
-    color: var(--gris);
-    margin-top: 0.3cm;
-    text-align: center;
+    color: var(--encre-faible);
 }
 
-/* ============================================================================
-   14. SECTIONS SPÉCIALES
-   ============================================================================ */
-
-/* Section Énoncé */
-.enonce {
-    background-color: #FAFAFA;
-    border: 1pt solid #E0E0E0;
-    border-radius: 4pt;
-    padding: 0.6cm;
-    margin: 0.5cm 0;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-.enonce h3, .enonce h4 {
-    color: var(--bleu-nuit);
-    margin-top: 0;
-}
-
-/* Section Explication */
-.explication {
-    margin: 0.5cm 0;
-    padding: 0.4cm 0;
-    border-top: 1pt dashed var(--gris);
-}
-
-.explication h3, .explication h4 {
-    color: var(--violet);
-}
-
-/* Section Correction */
-.correction {
-    margin: 0.5cm 0;
-}
-
-/* Un fichier annexé avec -c est découpé par le script en blocs logiques
-   (une définition par bloc). Chacun reste insécable, et les blocs sont
-   resserrés pour donner l'impression d'un code continu. */
-.correction pre {
-    break-inside: avoid;
-    page-break-inside: avoid;
-    margin-top: 0.15cm;
-    margin-bottom: 0.15cm;
-}
-
-.correction h3, .correction h4 {
-    color: #2E7D32;
-}
-
-/* ============================================================================
-   15. ÉLÉMENTS SPÉCIAUX
-   ============================================================================ */
-
-/* Emphases */
-strong, b {
-    font-weight: bold;
-    color: var(--noir);
-}
-
-em, i {
-    font-style: italic;
-}
-
-/* Terme technique */
-.term {
-    font-weight: bold;
-    color: var(--violet);
-}
-
-/* Texte surligné */
-mark {
-    background-color: var(--jaune-doux);
-    padding: 0 0.1cm;
-}
-
-/* Petites majuscules */
-.smallcaps {
-    font-variant: small-caps;
-}
-
-/* Barre horizontale */
-hr {
-    /*border: none;
-    border-top: 1pt solid var(--gris);
-    margin: 1cm 0;*/
-    border: none;
-    height: 0;
-    margin: 0;
-    padding: 0;
+/* Page blanche insérée entre la couverture et la table des matières
+   (clé YAML « blank_page », option --blank-page). Elle ne contient qu'un
+   espace insécable, masqué : sans lui, la page n'existerait pas. */
+.page-blanche {
+    page: blanche;
+    break-before: page;
+    break-after: page;
     visibility: hidden;
-    page-break-after: always;
+}
+
+
+/* ==========================================================================
+   5. Table des matières
+   ========================================================================== */
+
+.toc {
     break-after: page;
 }
 
-/* ============================================================================
-   16. CONTRÔLE DE PAGINATION AVANCÉ
-   ============================================================================ */
-
-/* Bloc insécable */
-.no-break {
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-/* Garder avec le suivant */
-.keep-with-next {
-    page-break-after: avoid;
+.toc h1,
+.toc .toc-titre {
+    font-family: var(--sans);
+    font-size: 19pt;
+    font-weight: 700;
+    color: var(--encre);
+    border-bottom: 1.6pt solid var(--accent);
+    padding-bottom: 3mm;
+    margin: 0 0 8mm 0;
     break-after: avoid;
 }
 
-/* Nouvelle page */
-.page-break {
-    page-break-before: always;
-    break-before: page;
+a.toc-entry {
+    display: block;
+    position: relative;
+    /* Les points de conduite débordent puis sont rognés, et le numéro de
+       page est calé en absolu sur la droite : il reste sur la ligne quelle
+       que soit la longueur des points émis par didacode. Pas de flexbox
+       ni de leader(), donc pas de dépendance à une version récente. */
+    overflow: hidden;
+    white-space: nowrap;
+    padding-right: 11mm;
+    text-decoration: none;
+    color: var(--encre);
+    font-family: var(--sans);
+    margin-bottom: 1.6mm;
 }
 
-/* Éviter les veuves et orphelines */
-.avoid-orphans {
-    orphans: 4;
-    widows: 4;
+a.toc-entry::after {
+    content: target-counter(attr(href url), page);
+    position: absolute;
+    right: 0;
+    top: 0;
+    min-width: 9mm;
+    padding-left: 2mm;
+    /* Le fond masque les points qui dépasseraient sous le numéro. */
+    background: #ffffff;
+    text-align: right;
+    color: var(--encre-douce);
+    font-variant-numeric: tabular-nums;
 }
 
-/* ============================================================================
-   17. NUMÉROTATION DES CHAPITRES (OPTIONNEL)
-   ============================================================================ */
-
-body {
-    counter-reset: chapter section subsection;
+.toc-leader {
+    color: var(--filet-fort);
+    letter-spacing: 1.5px;
+    padding: 0 1mm;
 }
 
-h1.numbered {
-    counter-increment: chapter;
-    counter-reset: section;
+a.toc-entry.level-1 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    margin-top: 4mm;
 }
 
-h1.numbered::before {
-    content: "Chapitre " counter(chapter) " — ";
+a.toc-entry.level-2 {
+    font-size: 9.5pt;
+    font-weight: 400;
+    padding-left: 6mm;
 }
 
-h2.numbered {
-    counter-increment: section;
-    counter-reset: subsection;
+a.toc-entry.level-3 {
+    font-size: 9pt;
+    font-weight: 400;
+    color: var(--encre-douce);
+    padding-left: 12mm;
 }
 
-h2.numbered::before {
-    content: counter(chapter) "." counter(section) "  ";
+
+/* ==========================================================================
+   6. Titres
+   ========================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--sans);
+    color: var(--encre);
+    line-height: 1.25;
+    break-after: avoid;
+    break-inside: avoid;
 }
 
-h3.numbered {
-    counter-increment: subsection;
+h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    margin: 0 0 7mm 0;
+    padding-bottom: 3mm;
+    border-bottom: 1.6pt solid var(--accent);
+
+    /* Alimente l'en-tête courant et le sommaire du PDF. */
+    string-set: chapitre-courant content(text);
+    bookmark-level: 1;
+    bookmark-label: content(text);
 }
 
-h3.numbered::before {
-    content: counter(chapter) "." counter(section) "." counter(subsection) "  ";
+h2 {
+    font-size: 15pt;
+    font-weight: 700;
+    margin: 9mm 0 3mm 0;
+    bookmark-level: 2;
+    bookmark-label: content(text);
 }
 
-/* ============================================================================
-   18. ANNEXES
-   ============================================================================ */
+h3 {
+    font-size: 12pt;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 7mm 0 2.5mm 0;
+    bookmark-level: 3;
+    bookmark-label: content(text);
+}
+
+h4 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: var(--encre-douce);
+    margin: 5mm 0 2mm 0;
+    bookmark-level: 4;
+    bookmark-label: content(text);
+}
+
+/* Numérotation automatique, active uniquement si numbered: true */
+body.numbered { counter-reset: chapter; }
+body.numbered h1.numbered { counter-increment: chapter; counter-reset: section; }
+body.numbered h1.numbered::before { content: counter(chapter) ". "; }
+body.numbered h2.numbered { counter-increment: section; counter-reset: subsection; }
+body.numbered h2.numbered::before { content: counter(chapter) "." counter(section) ". "; }
+body.numbered h3.numbered { counter-increment: subsection; }
+body.numbered h3.numbered::before {
+    content: counter(chapter) "." counter(section) "." counter(subsection) ". ";
+}
+
+
+/* ==========================================================================
+   7. Sauts de page pilotés par le YAML (page_breaks)
+   ========================================================================== */
+
+body.sauts-chapter .section-chapter { break-before: page; }
+
+body.sauts-section .section-chapter,
+body.sauts-section .section-section { break-before: page; }
+
+body.sauts-none .section { break-before: auto; }
+
+/* Pas de page blanche avant la toute première section. */
+.premiere-section { break-before: avoid !important; }
+
+.premiere-section > h2:first-child { margin-top: 0; }
+
+
+/* ==========================================================================
+   8. Listes
+   ========================================================================== */
+
+ul, ol {
+    margin: 0 0 0.85em 0;
+    padding-left: 5.5mm;
+}
+
+li {
+    margin-bottom: 0.3em;
+}
+
+/* Source Serif 4 ne contient pas la puce creuse U+25E6 des sous-listes.
+   Source Sans 3 la fournit, ce qui évite un repli vers une police système. */
+li::marker {
+    font-family: "Source Sans 3", var(--sans);
+}
+
+li > ul,
+li > ol {
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;
+}
+
+/* Une liste courte ne doit pas être coupée entre deux pages. */
+ul, ol { break-inside: auto; }
+li     { break-inside: avoid; }
+
+
+/* ==========================================================================
+   9. Code
+   ========================================================================== */
+
+code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--fond-doux);
+    border: 0.4pt solid var(--filet);
+    border-radius: 2px;
+    padding: 0.5pt 2.5pt;
+    /* Un identifiant long ne doit pas déborder de la colonne. */
+    overflow-wrap: break-word;
+}
+
+pre {
+    font-family: var(--mono);
+    font-size: 8.6pt;
+    line-height: 1.45;
+    margin: 0 0 1em 0;
+    padding: 3mm 4mm;
+    background: var(--fond-doux);
+    border: 0.5pt solid var(--filet);
+    border-left: 2.2pt solid var(--filet-fort);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    /* Les longs blocs YAML dépassent la page : on les laisse se couper,
+       sans laisser une ligne seule en haut ou en bas. */
+    break-inside: auto;
+    widows: 3;
+    orphans: 3;
+}
+
+pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* Bandeau de nom de fichier, au-dessus du bloc */
+.code-header {
+    font-family: var(--sans);
+    font-size: 8pt;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--encre-douce);
+    padding: 1.4mm 4mm;
+    margin-top: 1em;
+    border-radius: 2px 2px 0 0;
+    break-after: avoid;
+}
+
+.code-header .filename {
+    font-family: var(--mono);
+    font-weight: 400;
+}
+
+.code-header + .code-block pre,
+.code-header + pre {
+    margin-top: 0;
+    border-radius: 0 0 2px 2px;
+}
+
+.code-block {
+    break-inside: auto;
+}
+
+
+/* ==========================================================================
+   10. Coloration syntaxique (Pygments, classe .highlight)
+   Palette sobre, pensée pour rester lisible imprimée en niveaux de gris :
+   les commentaires sont en italique, les mots-clés en gras.
+   ========================================================================== */
+
+.highlight { background: transparent; }
+
+/* Commentaires */
+.highlight .c, .highlight .c1, .highlight .cm,
+.highlight .cs, .highlight .ch, .highlight .cpf { color: #6a737d; font-style: italic; }
+.highlight .cp { color: #6a737d; font-style: italic; }
+
+/* Mots-clés */
+.highlight .k, .highlight .kn, .highlight .kd,
+.highlight .kr, .highlight .kp { color: #1f4e79; font-weight: 700; }
+.highlight .kc { color: #8b2f8b; font-weight: 700; }
+.highlight .kt { color: #1f4e79; }
+
+/* Chaînes */
+.highlight .s,  .highlight .s1, .highlight .s2, .highlight .sb,
+.highlight .sc, .highlight .sh, .highlight .sx, .highlight .sd { color: #1a6b52; }
+.highlight .se { color: #1a6b52; font-weight: 700; }
+.highlight .si { color: #1a6b52; font-weight: 700; }
+.highlight .sr { color: #9a4a00; }
+.highlight .ss { color: #9a4a00; }
+
+/* Nombres */
+.highlight .m,  .highlight .mi, .highlight .mf, .highlight .mh,
+.highlight .mo, .highlight .mb, .highlight .il { color: #9a3d00; }
+
+/* Noms */
+.highlight .nf, .highlight .fm { color: #5a3ba8; font-weight: 600; }
+.highlight .nc { color: #5a3ba8; font-weight: 700; }
+.highlight .nd { color: #9a4a00; font-style: italic; }
+.highlight .ne { color: #a03030; font-weight: 600; }
+.highlight .nb, .highlight .bp { color: #1f4e79; }
+.highlight .nn, .highlight .nx { color: #2a2a2a; }
+.highlight .no { color: #8b2f8b; }
+.highlight .nv, .highlight .vc, .highlight .vg,
+.highlight .vi { color: #a03030; }
+.highlight .nt { color: #1f4e79; font-weight: 600; }
+.highlight .na { color: #5a3ba8; }
+.highlight .nl { color: #4a4a4a; font-weight: 600; }
+.highlight .ni { color: #4a4a4a; }
+.highlight .n,  .highlight .py { color: inherit; }
+
+/* Opérateurs et ponctuation */
+.highlight .o  { color: #2a2a2a; }
+.highlight .ow { color: #1f4e79; font-weight: 700; }
+.highlight .p  { color: #4a4a4a; }
+
+/* Erreurs et divers */
+.highlight .err { color: #a03030; background: #fdecec; }
+.highlight .x   { color: inherit; }
+.highlight .w   { color: transparent; }
+
+/* Sorties et diff */
+.highlight .g  { color: inherit; }
+.highlight .gd { color: #a03030; background: #fdecec; }
+.highlight .gi { color: #1a6b52; background: #eaf7f1; }
+.highlight .ge { font-style: italic; }
+.highlight .gs { font-weight: 700; }
+.highlight .gr { color: #a03030; }
+.highlight .gt { color: #a03030; }
+.highlight .gh { color: #1f4e79; font-weight: 700; }
+.highlight .gu { color: #5a3ba8; font-weight: 600; }
+.highlight .go { color: #4a4a4a; }
+.highlight .gp { color: #6a737d; font-weight: 700; }
+
+
+/* ==========================================================================
+   11. Encadrés pédagogiques
+   --------------------------------------------------------------------------
+   didacode retire le mot-clé [INFO] du texte et ne pose que la classe :
+   le libellé doit donc venir du CSS. Les quatre encadrés se distinguent
+   aussi par l'épaisseur et le style du filet, pour rester différenciables
+   sur une impression en noir et blanc.
+   ========================================================================== */
+
+/* Citation ordinaire, sans classe. Déclarée avant les encadrés pour que
+   ceux-ci ne récupèrent ni l'italique ni la couleur atténuée. */
+blockquote {
+    margin: 1.1em 0;
+    padding-left: 4mm;
+    border-left: 2pt solid var(--filet-fort);
+    color: var(--encre-douce);
+    font-style: italic;
+}
+
+blockquote.info,
+blockquote.warning,
+blockquote.important,
+blockquote.reminder,
+.info-box, .warning-box, .important-box, .reminder-box {
+    color: var(--encre);
+    font-style: normal;
+    margin: 1.1em 0;
+    padding: 3mm 4mm 2.2mm 4mm;
+    border-radius: 0 3px 3px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    font-size: 0.96em;
+}
+
+blockquote.info p:last-child,
+blockquote.warning p:last-child,
+blockquote.important p:last-child,
+blockquote.reminder p:last-child,
+.info-box p:last-child, .warning-box p:last-child,
+.important-box p:last-child, .reminder-box p:last-child {
+    margin-bottom: 0;
+}
+
+/* Libellé commun */
+blockquote.info::before,
+blockquote.warning::before,
+blockquote.important::before,
+blockquote.reminder::before,
+.info-box::before, .warning-box::before,
+.important-box::before, .reminder-box::before {
+    display: block;
+    font-family: var(--sans);
+    font-size: 7.6pt;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin-bottom: 1.6mm;
+}
+
+/* — Information : filet fin */
+blockquote.info, .info-box {
+    background: var(--info-fond);
+    border-left: 2.5pt solid var(--info-trait);
+}
+blockquote.info::before, .info-box::before {
+    content: "Information";
+    color: var(--info-trait);
+}
+
+/* — À retenir : filet épais */
+blockquote.important, .important-box {
+    background: var(--important-fond);
+    border-left: 4.5pt solid var(--important-trait);
+}
+blockquote.important::before, .important-box::before {
+    content: "À retenir";
+    color: var(--important-trait);
+}
+
+/* — Attention : filet épais doublé */
+blockquote.warning, .warning-box {
+    background: var(--warning-fond);
+    border-left: 4.5pt double var(--warning-trait);
+}
+blockquote.warning::before, .warning-box::before {
+    content: "Attention";
+    color: var(--warning-trait);
+}
+
+/* — Rappel : filet pointillé */
+blockquote.reminder, .reminder-box {
+    background: var(--reminder-fond);
+    border-left: 3pt dotted var(--reminder-trait);
+}
+blockquote.reminder::before, .reminder-box::before {
+    content: "Rappel";
+    color: var(--reminder-trait);
+}
+
+/* Un bloc de code dans un encadré reste lisible sur le fond teinté. */
+blockquote.info pre, blockquote.warning pre,
+blockquote.important pre, blockquote.reminder pre {
+    background: #ffffff;
+}
+
+blockquote.info code, blockquote.warning code,
+blockquote.important code, blockquote.reminder code {
+    background: #ffffff;
+}
+
+/* ==========================================================================
+   12. Tableaux
+   ========================================================================== */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.1em 0;
+    font-size: 0.92em;
+    font-family: var(--sans);
+    break-inside: auto;
+}
+
+/* L'en-tête se répète en haut de chaque page pour un tableau long. */
+thead { display: table-header-group; }
+tfoot { display: table-footer-group; }
+tr    { break-inside: avoid; }
+
+th {
+    text-align: left;
+    font-weight: 600;
+    background: var(--fond-doux);
+    border-bottom: 1.2pt solid var(--filet-fort);
+    padding: 2mm 2.5mm;
+}
+
+td {
+    border-bottom: 0.4pt solid var(--filet);
+    padding: 1.8mm 2.5mm;
+    vertical-align: top;
+}
+
+tbody tr:nth-child(even) td { background: #fbfbfa; }
+
+table code {
+    font-size: 0.88em;
+    background: #ffffff;
+}
+
+
+/* ==========================================================================
+   13. Blocs d'exercices
+   ========================================================================== */
+
+.enonce,
+.explication,
+.correction {
+    margin: 1.2em 0;
+    padding: 3mm 4mm;
+    border: 0.5pt solid var(--filet);
+    border-radius: 3px;
+    break-inside: avoid;
+}
+
+.enonce {
+    background: #ffffff;
+    border-left: 3pt solid var(--encre-douce);
+}
+.enonce::before {
+    content: "Énoncé";
+    display: block;
+    font-family: var(--sans);
+    font-size: 7.6pt;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--encre-douce);
+    margin-bottom: 1.6mm;
+}
+
+.explication {
+    background: var(--fond-doux);
+    border-left: 3pt solid var(--accent);
+}
+.explication::before {
+    content: "Explication";
+    display: block;
+    font-family: var(--sans);
+    font-size: 7.6pt;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.6mm;
+}
+
+.correction {
+    background: var(--reminder-fond);
+    border-left: 3pt solid var(--reminder-trait);
+}
+.correction::before {
+    content: "Correction";
+    display: block;
+    font-family: var(--sans);
+    font-size: 7.6pt;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--reminder-trait);
+    margin-bottom: 1.6mm;
+}
+
+
+/* ==========================================================================
+   14. Annexe de code source
+   ========================================================================== */
 
 .annexe {
-    page-break-before: always;
+    break-before: page;
 }
 
 .annexe h1 {
-    border-bottom-color: var(--orange);
+    border-bottom-color: var(--filet-fort);
 }
 
-.annexe h1::before {
-    content: "Annexe : ";
-    color: var(--orange);
+.annexe pre {
+    font-size: 8pt;
+    line-height: 1.4;
 }
 
-/* ============================================================================
-   19. PRINT SPECIFICS
-   ============================================================================ */
 
-@media print {
-    body {
-        font-size: 11pt;
-    }
-    
-    /* Éviter les sauts de page problématiques */
-    h1, h2, h3, h4, h5, h6 {
-        page-break-after: avoid;
-    }
-    
-    pre, blockquote, table, figure {
-        page-break-inside: avoid;
-    }
-    
-    /* Afficher les URLs des liens externes uniquement.
-       Un simple a[href] collerait aussi "#ancre" derrière chaque entrée
-       de la table des matières. */
-    a[href^="http"]::after {
-        content: " (" attr(href) ")";
-        font-size: 80%;
-        color: var(--gris);
-    }
-    
-    /* Masquer les éléments non imprimables */
-    .no-print {
-        display: none !important;
-    }
+/* ==========================================================================
+   15. Utilitaires
+   ========================================================================== */
+
+.term {
+    font-style: italic;
+    font-weight: 600;
 }
 
-/* ============================================================================
-   20. ACCESSIBILITÉ ET LISIBILITÉ
-   ============================================================================ */
-
-/* Contraste suffisant */
-.high-contrast {
-    color: #000000;
-    background-color: #FFFFFF;
+.smallcaps {
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
 }
 
-/* Espacement de lecture confortable */
-.readable {
-    line-height: 1.6;
-    letter-spacing: 0.01em;
-    word-spacing: 0.05em;
+.no-break,
+.avoid-orphans {
+    break-inside: avoid;
 }
 
-/* ----------------------------------------------------------------------------
-   21. SAUTS DE PAGE AUTOMATIQUES
-
-   Le script pose sur <body> la classe correspondant à l'option page_breaks :
-
-     sauts-section   chaque titre de niveau 2 démarre une page (défaut)
-     sauts-chapter   seuls les titres de niveau 1 démarrent une page
-     sauts-none      aucun saut automatique, seuls les --- en produisent
-
-   Un titre ne reste jamais seul en bas de page, quel que soit le mode.
-   ---------------------------------------------------------------------------- */
-
-h2 {
+.keep-with-next {
     break-after: avoid;
 }
 
-body.sauts-section h2 {
-    break-before: page;
-}
-
-body.sauts-section .premiere-section > h2:first-child {
-    break-before: auto;
-}
-
-body.sauts-none h1 {
-    page-break-before: auto;
-    break-before: auto;
-}
-
+.page-break,
 .saut-page {
-    break-after: page;
+    break-before: page;
+    /* L'élément lui-même ne doit rien occuper. */
+    height: 0;
+    margin: 0;
+    border: none;
+}
+
+.no-print {
+    display: none;
+}
+
+.high-contrast {
+    color: #000000;
+    background: #ffffff;
+}
+
+.readable {
+    font-size: 1.08em;
+    line-height: 1.7;
 }

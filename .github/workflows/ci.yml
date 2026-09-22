@@ -88,17 +88,20 @@ jobs:
         run: |
           pdfinfo dist/didacode-exemple.pdf
           pdffonts dist/didacode-exemple.pdf | tee /tmp/didacode-polices.txt
-          grep -Eq "EB-Garamond|EBGaramond" /tmp/didacode-polices.txt
-          grep -Eq "EB-Garamond-Bold" /tmp/didacode-polices.txt
-          grep -Eq "EB-Garamond-Bold-Italic" /tmp/didacode-polices.txt
-          grep -Eq "Roboto-Mono|RobotoMono" /tmp/didacode-polices.txt
-          grep -Eq "Roboto-Mono-Bold" /tmp/didacode-polices.txt
-          grep -Eq "Roboto-Mono-Italic" /tmp/didacode-polices.txt
+          grep -Eq "Source-Serif-4|SourceSerif4" /tmp/didacode-polices.txt
+          grep -Eq "Source-Serif-4-(Semi-)?Bold|SourceSerif4-(Semi)?Bold" /tmp/didacode-polices.txt
+          grep -Eq "Source-Serif-4-.*Italic|SourceSerif4-.*Italic" /tmp/didacode-polices.txt
+          grep -Eq "Fira-Sans|FiraSans" /tmp/didacode-polices.txt
+          grep -Eq "Fira-Sans-(Semi-)?Bold|FiraSans-(Semi)?Bold" /tmp/didacode-polices.txt
+          grep -Eq "Source-Sans-3|SourceSans3" /tmp/didacode-polices.txt
+          grep -Eq "Fira-Mono|FiraMono" /tmp/didacode-polices.txt
+          grep -Eq "Fira-Mono-Bold|FiraMono-Bold" /tmp/didacode-polices.txt
+          grep -Eq "Fira-Mono-(Italic|Oblique)|FiraMono-(Italic|Oblique)" /tmp/didacode-polices.txt
           polices_inattendues="$(
             tail -n +3 /tmp/didacode-polices.txt \
               | awk '{print $1}' \
               | sed -E 's/^[A-Z]{6}\+//' \
-              | grep -Ev '^(EB-Garamond|EBGaramond|Roboto-Mono|RobotoMono)' \
+              | grep -Ev '^(Source-Serif-4|SourceSerif4|Fira-Sans|FiraSans|Source-Sans-3|SourceSans3|Fira-Mono|FiraMono)' \
               || true
           )"
           if [ -n "$polices_inattendues" ]; then

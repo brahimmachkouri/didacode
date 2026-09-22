@@ -162,6 +162,31 @@ class TestYaml(DossierTemporaire):
         self.assertEqual(config['markdown'], [str(self.racine / 'projet' / 'doc.md')])
         self.assertEqual(config['_racine'], (self.racine / 'projet').resolve())
 
+    def test_priorites_polices_acceptent_un_nom_ou_une_liste(self):
+        self.ecrire(
+            'manuel.yaml',
+            'font_priority:\n'
+            '  serif: DejaVu Serif\n'
+            '  sans: [DejaVu Sans, Liberation Sans]\n'
+            '  mono: JetBrains Mono\n',
+        )
+        config = dc.load_config_file(self.racine / 'manuel.yaml')
+        self.assertEqual(config['font_priority'], {
+            'serif': ['DejaVu Serif'],
+            'sans': ['DejaVu Sans', 'Liberation Sans'],
+            'mono': ['JetBrains Mono'],
+        })
+
+    def test_categorie_de_police_inconnue_refusee(self):
+        self.ecrire('manuel.yaml', 'font_priority:\n  display: Fira Sans\n')
+        with self.assertRaisesRegex(dc.ErreurGeneration, 'serif, sans et mono'):
+            dc.load_config_file(self.racine / 'manuel.yaml')
+
+    def test_priorite_de_police_vide_refusee(self):
+        self.ecrire('manuel.yaml', 'font_priority:\n  serif: []\n')
+        with self.assertRaisesRegex(dc.ErreurGeneration, 'liste vide'):
+            dc.load_config_file(self.racine / 'manuel.yaml')
+
 
 class TestPagination(DossierTemporaire):
 
@@ -193,6 +218,52 @@ class TestPagination(DossierTemporaire):
     def test_modes_valides(self):
         for mode in dc.SAUTS_VALIDES:
             self.assertEqual(dc.valider_sauts(mode.upper()), mode)
+
+
+class TestPageBlanche(DossierTemporaire):
+
+    def html(self, page_blanche, couverture=True):
+        self.ecrire('a.md', '# Chapitre A\n\nTexte.\n')
+        config = dc.Config()
+        config.RACINE = self.racine
+        config.INCLUDE_COVER = couverture
+        config.BLANK_PAGE = page_blanche
+        doc = dc.DocumentGenerator(config)
+        doc.add_markdown_file(self.racine / 'a.md')
+        return doc.generate_html()
+
+    def test_absente_par_defaut(self):
+        self.assertNotIn('class="page-blanche"', self.html(False))
+
+    def test_inseree_entre_la_couverture_et_le_sommaire(self):
+        html = self.html(True)
+        self.assertEqual(html.count('class="page-blanche"'), 1)
+        self.assertLess(html.index('class="cover-page"'),
+                        html.index('class="page-blanche"'))
+        self.assertLess(html.index('class="page-blanche"'),
+                        html.index('class="toc"'))
+
+    def test_ignoree_sans_couverture(self):
+        """Sans page de garde, le document s'ouvrirait sur une page vide."""
+        self.assertNotIn('class="page-blanche"', self.html(True, couverture=False))
+
+    def test_produit_une_page_reelle(self):
+        """
+        Une division vide ne génère aucune page : c'est l'espace insécable de
+        _generate_blank_page qui la fait exister.
+        """
+        from weasyprint import HTML
+
+        pages = [len(HTML(string=self.html(blanche),
+                          base_url=str(self.racine)).render().pages)
+                 for blanche in (False, True)]
+        self.assertEqual(pages[1], pages[0] + 1)
+
+    def test_cle_yaml_reconnue_et_booleenne(self):
+        self.assertIn('blank_page', dc.CLES_YAML)
+        self.assertIn('blank_page', dc.CLES_BOOLEENNES)
+        with self.assertRaises(dc.ErreurGeneration):
+            dc.booleen('parfois', 'blank_page')
 
 
 class TestCode(unittest.TestCase):
@@ -238,6 +309,136 @@ class TestCode(unittest.TestCase):
 
 class TestPolices(DossierTemporaire):
 
+    def test_priorites_sont_ajoutees_apres_les_piles_du_theme(self):
+        css = '''
+:root {
+    --serif: "Source Serif 4", serif;
+    --sans: "Fira Sans", sans-serif;
+    --mono: "Fira Mono", monospace;
+}
+'''
+        resultat = dc.appliquer_priorites_polices(css, {
+            'serif': ['DejaVu Serif', 'Liberation Serif'],
+            'mono': 'JetBrains Mono',
+        })
+
+        self.assertIn(
+            '--serif: "DejaVu Serif", "Liberation Serif", '
+            '"Source Serif 4", serif;',
+            resultat,
+        )
+        self.assertIn(
+            '--mono: "JetBrains Mono", "Fira Mono", monospace;',
+            resultat,
+        )
+        self.assertNotIn('font_priority', css)
+        self.assertGreater(
+            resultat.index('Priorités typographiques'),
+            resultat.index('--serif: "Source Serif 4"'),
+        )
+
+    def test_nom_de_police_est_protege_dans_le_css(self):
+        resultat = dc.appliquer_priorites_polices(
+            ':root {\n    --serif: serif;\n}\n',
+            {'serif': ['Nom "spécial" \\ test']},
+        )
+        self.assertIn('"Nom \\"spécial\\" \\\\ test", serif;', resultat)
+
+    def test_generation_html_applique_la_priorite_yaml(self):
+        dossier_vide = self.racine / 'fonts'
+        dossier_vide.mkdir()
+        config = dc.Config()
+        config.RACINE = self.racine
+        config.FONTS_DIR = str(dossier_vide)
+        config.FONT_PRIORITY = {'sans': ['Police du système']}
+
+        html = dc.DocumentGenerator(config).generate_html()
+
+        self.assertIn(
+            '--sans: "Police du système", "Fira Sans", "Source Sans 3",',
+            html,
+        )
+
+    def test_familles_de_repli_statiques_sont_reconnues(self):
+        """DejaVu et Liberation fournissent les quatre styles usuels."""
+        for famille, prefixe in (
+                ('DejaVu Sans', 'DejaVuSans'),
+                ('DejaVu Serif', 'DejaVuSerif'),
+                ('Liberation Sans', 'LiberationSans'),
+                ('Liberation Serif', 'LiberationSerif')):
+            with self.subTest(famille=famille):
+                dossier = self.racine / prefixe
+                dossier.mkdir()
+                for variante in ('Regular', 'Italic', 'Bold', 'BoldItalic'):
+                    (dossier / f'{prefixe}-{variante}.ttf').write_text('')
+                css, familles = dc.generer_font_faces(dossier)
+
+                self.assertEqual(familles, [famille])
+                self.assertEqual(css.count(f'font-family: "{famille}"'), 4)
+                self.assertEqual(css.count('font-style: italic'), 2)
+
+    def test_jetbrains_mono_variable_est_reconnue(self):
+        """Deux fontes variables couvrent les styles droits et italiques."""
+        self.ecrire('JetBrainsMono[wght].ttf', '')
+        self.ecrire('JetBrainsMono-Italic[wght].ttf', '')
+        css, familles = dc.generer_font_faces(self.racine)
+
+        self.assertEqual(familles, ['JetBrains Mono'])
+        self.assertEqual(css.count('font-family: "JetBrains Mono"'), 2)
+        self.assertEqual(css.count('font-weight: 400 700'), 2)
+        self.assertIn('font-style: italic', css)
+
+    def test_fira_sans_couvre_les_graisses_utilisees(self):
+        """Fira Sans fournit 400, 600 et 700 en droit et en italique."""
+        for nom in (
+                'FiraSans-Regular.ttf', 'FiraSans-Italic.ttf',
+                'FiraSans-SemiBold.ttf', 'FiraSans-SemiBoldItalic.ttf',
+                'FiraSans-Bold.ttf', 'FiraSans-BoldItalic.ttf'):
+            self.ecrire(nom, '')
+        css, familles = dc.generer_font_faces(self.racine)
+
+        self.assertEqual(familles, ['Fira Sans'])
+        self.assertEqual(css.count('font-family: "Fira Sans"'), 6)
+        for poids in ('400', '600', '700'):
+            self.assertEqual(css.count(f'font-weight: {poids}'), 2)
+        self.assertEqual(css.count('font-style: italic'), 3)
+
+    def test_bitstream_charter_couvre_les_quatre_styles(self):
+        """La conversion TTF de Charter fournit les quatre faces usuelles."""
+        for nom in (
+                'BitstreamCharter-Regular.ttf',
+                'BitstreamCharter-Italic.ttf',
+                'BitstreamCharter-Bold.ttf',
+                'BitstreamCharter-BoldItalic.ttf'):
+            self.ecrire(nom, '')
+        css, familles = dc.generer_font_faces(self.racine)
+
+        self.assertEqual(familles, ['Bitstream Charter'])
+        self.assertEqual(css.count('font-family: "Bitstream Charter"'), 4)
+        self.assertEqual(css.count('font-style: italic'), 2)
+
+    def test_source_sans_variable_est_reconnue(self):
+        """La famille sans livrée couvre les graisses normale et grasse."""
+        self.ecrire('SourceSans3[wght].ttf', '')
+        self.ecrire('SourceSans3-Italic[wght].ttf', '')
+        css, familles = dc.generer_font_faces(self.racine)
+
+        self.assertEqual(familles, ['Source Sans 3'])
+        self.assertEqual(css.count('font-family: "Source Sans 3"'), 2)
+        self.assertEqual(css.count('font-weight: 400 700'), 2)
+        self.assertIn('font-style: italic', css)
+
+    def test_fira_mono_statique_est_reconnue(self):
+        """Fira Mono fournit deux fichiers droits pour 400 et 700."""
+        self.ecrire('FiraMono-Regular.ttf', '')
+        self.ecrire('FiraMono-Bold.ttf', '')
+        css, familles = dc.generer_font_faces(self.racine)
+
+        self.assertEqual(familles, ['Fira Mono'])
+        self.assertEqual(css.count('font-family: "Fira Mono"'), 2)
+        self.assertIn('font-weight: 400', css)
+        self.assertIn('font-weight: 700', css)
+
     def test_roboto_mono_est_reconnue(self):
         """La police monospace livrée doit produire une règle @font-face."""
         self.ecrire('RobotoMono-Regular.ttf', '')
@@ -280,16 +481,48 @@ class TestPolices(DossierTemporaire):
         self.assertIn('font-style: normal', css)
         self.assertNotIn('font-style: italic', css)
 
-    def test_distribution_ne_garde_que_les_polices_variables(self):
-        """Évite de réintroduire les nombreuses variantes statiques."""
+    def test_distribution_ne_garde_que_les_variantes_necessaires(self):
+        """Évite de réintroduire des variantes statiques inutiles."""
         dossier = Path(dc.__file__).resolve().parent / 'fonts'
         polices = sorted(p.name for p in dossier.glob('*.ttf'))
         self.assertEqual(polices, [
+            'BitstreamCharter-Bold.ttf',
+            'BitstreamCharter-BoldItalic.ttf',
+            'BitstreamCharter-Italic.ttf',
+            'BitstreamCharter-Regular.ttf',
+            'DejaVuSans-Bold.ttf',
+            'DejaVuSans-BoldItalic.ttf',
+            'DejaVuSans-Italic.ttf',
+            'DejaVuSans-Regular.ttf',
+            'DejaVuSerif-Bold.ttf',
+            'DejaVuSerif-BoldItalic.ttf',
+            'DejaVuSerif-Italic.ttf',
+            'DejaVuSerif-Regular.ttf',
             'EBGaramond-Italic-VariableFont_wght.ttf',
             'EBGaramond-VariableFont_wght.ttf',
             'FiraCode-VariableFont_wght.ttf',
+            'FiraMono-Bold.ttf',
+            'FiraMono-Regular.ttf',
+            'FiraSans-Bold.ttf',
+            'FiraSans-BoldItalic.ttf',
+            'FiraSans-Italic.ttf',
+            'FiraSans-Regular.ttf',
+            'FiraSans-SemiBold.ttf',
+            'FiraSans-SemiBoldItalic.ttf',
+            'JetBrainsMono-Italic[wght].ttf',
+            'JetBrainsMono[wght].ttf',
+            'LiberationSans-Bold.ttf',
+            'LiberationSans-BoldItalic.ttf',
+            'LiberationSans-Italic.ttf',
+            'LiberationSans-Regular.ttf',
+            'LiberationSerif-Bold.ttf',
+            'LiberationSerif-BoldItalic.ttf',
+            'LiberationSerif-Italic.ttf',
+            'LiberationSerif-Regular.ttf',
             'RobotoMono-Italic-VariableFont_wght.ttf',
             'RobotoMono-VariableFont_wght.ttf',
+            'SourceSans3-Italic[wght].ttf',
+            'SourceSans3[wght].ttf',
             'SourceSerif4-Italic-VariableFont_opsz,wght.ttf',
             'SourceSerif4-VariableFont_opsz,wght.ttf',
         ])

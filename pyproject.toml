@@ -57,13 +57,7 @@ include-package-data = false
 [tool.setuptools.package-data]
 didacode = [
     "styles.css",
-    "fonts/EBGaramond-VariableFont_wght.ttf",
-    "fonts/EBGaramond-Italic-VariableFont_wght.ttf",
-    "fonts/RobotoMono-VariableFont_wght.ttf",
-    "fonts/RobotoMono-Italic-VariableFont_wght.ttf",
-    "fonts/SourceSerif4-VariableFont_opsz,wght.ttf",
-    "fonts/SourceSerif4-Italic-VariableFont_opsz,wght.ttf",
-    "fonts/FiraCode-VariableFont_wght.ttf",
+    "fonts/*.ttf",
     "fonts/*.md",
     "fonts/licenses/*.txt",
     "exemple/*.md",

@@ -140,6 +140,9 @@ class Config:
     # Chemins
     CSS_FILE = "styles.css"
     FONTS_DIR = "fonts"
+    # Familles à placer avant les piles définies par la feuille de style.
+    # Elles peuvent venir du dossier fonts/ ou être installées dans l'OS.
+    FONT_PRIORITY: Dict[str, List[str]] = {}
     # Dossier utilisé quand le nom de sortie ne comporte aucun répertoire
     SORTIE_PAR_DEFAUT = "output"
 
@@ -152,6 +155,10 @@ class Config:
     TOC_DEPTH = 3
     NUMBERED_CHAPTERS = False
     INCLUDE_COVER = True
+    # Page blanche insérée après la couverture, avant la table des matières.
+    # Convention d'imprimerie : la couverture occupe alors un recto seul, et
+    # le document relié s'ouvre sur un verso vierge.
+    BLANK_PAGE = False
     # Sauts de page automatiques : 'section' (chaque ##), 'chapter' (chaque #)
     # ou 'none' (uniquement les --- explicites).
     PAGE_BREAKS = 'section'
@@ -395,17 +402,30 @@ def creer_url_fetcher(racines: Sequence[Path]):
 # POLICES EMBARQUÉES
 # =============================================================================
 
-# Familles reconnues dans le dossier fonts/. Chaque famille trouvée est
-# incorporée au PDF, ce qui garantit un rendu identique partout.
-# Les noms correspondent aux archives distribuées par Google Fonts.
+# Familles reconnues dans le dossier fonts/. Chaque famille trouvée reçoit
+# des règles @font-face ; seules les fontes effectivement utilisées sont
+# ensuite incorporées au PDF.
+# Les noms correspondent aux archives Google Fonts et au paquet TTF de Charter.
 FAMILLES = {
-    "EB Garamond": "EBGaramond",
     "Source Serif 4": "SourceSerif4",
+    "Bitstream Charter": "BitstreamCharter",
+    "DejaVu Serif": "DejaVuSerif",
+    "Liberation Serif": "LiberationSerif",
+    "Source Sans 3": "SourceSans3",
+    "Fira Sans": "FiraSans",
+    "DejaVu Sans": "DejaVuSans",
+    "Liberation Sans": "LiberationSans",
+    "Fira Mono": "FiraMono",
+    "JetBrains Mono": "JetBrainsMono",
+    "EB Garamond": "EBGaramond",
     "Charis SIL": "CharisSIL",
     "Roboto Mono": "RobotoMono",
     "Fira Code": "FiraCode",
-    "JetBrains Mono": "JetBrainsMono",
 }
+
+CATEGORIES_POLICES = ('serif', 'sans', 'mono')
+VARIABLES_POLICES = {categorie: f'--{categorie}'
+                     for categorie in CATEGORIES_POLICES}
 
 # Noms de fichiers acceptés, dans l'ordre de préférence. {p} est le préfixe de
 # la famille. Les formes correspondent aux archives de fonts.google.com
@@ -413,12 +433,16 @@ FAMILLES = {
 # google/fonts (notation entre crochets).
 VARIANTES = [
     (("{p}-VariableFont_wght", "{p}-VariableFont_opsz,wght",
-      "{p}[wght]", "{p}[opsz,wght]", "{p}-Regular"),
+      "{p}[wght]", "{p}[opsz,wght]"),
      "400 700", "normal"),
+    (("{p}-Regular",), "400", "normal"),
+    (("{p}-SemiBold",), "600", "normal"),
     (("{p}-Bold",), "700", "normal"),
     (("{p}-Italic-VariableFont_wght", "{p}-Italic-VariableFont_opsz,wght",
-      "{p}-Italic[wght]", "{p}-Italic[opsz,wght]", "{p}-Italic"),
+      "{p}-Italic[wght]", "{p}-Italic[opsz,wght]"),
      "400 700", "italic"),
+    (("{p}-Italic",), "400", "italic"),
+    (("{p}-SemiBoldItalic",), "600", "italic"),
     (("{p}-BoldItalic",), "700", "italic"),
 ]
 
@@ -466,6 +490,87 @@ def generer_font_faces(dossier: Path) -> Tuple[str, List[str]]:
             regles.extend(variantes_famille)
 
     return "\n".join(regles), trouvees
+
+
+def valider_priorites_polices(valeur) -> Dict[str, List[str]]:
+    """Normalise le bloc YAML ``font_priority`` et refuse les valeurs ambiguës."""
+    if valeur is None:
+        return {}
+    if not isinstance(valeur, dict):
+        raise ErreurGeneration(
+            "La clé 'font_priority' attend un dictionnaire avec serif, sans ou mono."
+        )
+
+    resultat: Dict[str, List[str]] = {}
+    for categorie, familles in valeur.items():
+        if categorie not in CATEGORIES_POLICES:
+            raise ErreurGeneration(
+                "La clé 'font_priority' ne reconnaît que serif, sans et mono ; "
+                f"catégorie reçue : {categorie!r}"
+            )
+        if isinstance(familles, str):
+            familles = [familles]
+        elif not isinstance(familles, (list, tuple)):
+            raise ErreurGeneration(
+                f"font_priority.{categorie} attend un nom ou une liste de noms."
+            )
+        if not familles:
+            raise ErreurGeneration(
+                f"font_priority.{categorie} ne peut pas être une liste vide."
+            )
+
+        normalisees = []
+        for famille in familles:
+            if not isinstance(famille, str) or not famille.strip():
+                raise ErreurGeneration(
+                    f"font_priority.{categorie} contient un nom de police invalide : "
+                    f"{famille!r}"
+                )
+            famille = famille.strip()
+            if any(ord(caractere) < 32 or ord(caractere) == 127
+                   for caractere in famille):
+                raise ErreurGeneration(
+                    f"font_priority.{categorie} contient un caractère de contrôle."
+                )
+            if famille not in normalisees:
+                normalisees.append(famille)
+        resultat[categorie] = normalisees
+    return resultat
+
+
+def _chaine_css(valeur: str) -> str:
+    """Protège un nom de famille destiné à une chaîne CSS."""
+    return '"' + valeur.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
+def appliquer_priorites_polices(css: str, priorites) -> str:
+    """Place les familles demandées avant les replis de la feuille de style."""
+    priorites = valider_priorites_polices(priorites)
+    if not priorites:
+        return css
+
+    declarations = []
+    for categorie in CATEGORIES_POLICES:
+        familles = priorites.get(categorie)
+        if not familles:
+            continue
+        variable = VARIABLES_POLICES[categorie]
+        motif = re.compile(
+            rf'(?m)^[ \t]*{re.escape(variable)}\s*:\s*([^;]+);'
+        )
+        correspondances = list(motif.finditer(css))
+        replis = (correspondances[-1].group(1).strip()
+                  if correspondances else categorie)
+        priorite = ', '.join(_chaine_css(famille) for famille in familles)
+        declarations.append(f'    {variable}: {priorite}, {replis};')
+
+    surcharge = [
+        '/* Priorités typographiques demandées par font_priority. */',
+        ':root {',
+        *declarations,
+        '}',
+    ]
+    return css.rstrip() + '\n\n' + '\n'.join(surcharge) + '\n'
 
 
 # =============================================================================
@@ -681,12 +786,13 @@ class MarkdownConverter:
 CLES_YAML = {
     'title', 'subtitle', 'author', 'institution', 'date',
     'output', 'css', 'html', 'fonts', 'markdown', 'code',
-    'cover', 'toc', 'numbered', 'tags', 'page_breaks',
+    'font_priority',
+    'cover', 'blank_page', 'toc', 'numbered', 'tags', 'page_breaks',
 }
 
 CLES_CHEMIN = {'css', 'fonts', 'markdown', 'code'}
 CLES_SORTIE = {'output', 'html'}
-CLES_BOOLEENNES = {'cover', 'toc', 'numbered', 'tags'}
+CLES_BOOLEENNES = {'cover', 'blank_page', 'toc', 'numbered', 'tags'}
 
 
 def booleen(valeur, cle: str) -> bool:
@@ -765,6 +871,8 @@ def load_config_file(filepath: str) -> Dict:
             valeur = str(chemin_sortie(valeur, dossier))
         elif cle in CLES_BOOLEENNES:
             valeur = booleen(valeur, cle)
+        elif cle == 'font_priority':
+            valeur = valider_priorites_polices(valeur)
         elif cle == 'page_breaks':
             valeur = valider_sauts(valeur)
         config[cle] = valeur
@@ -911,6 +1019,15 @@ class DocumentGenerator:
         </div>
         '''
 
+    def _generate_blank_page(self) -> str:
+        """
+        Produit la page blanche qui suit la couverture.
+
+        L'espace insécable est indispensable : une division réellement vide
+        n'occupe aucune ligne, et WeasyPrint n'émet alors aucune page.
+        """
+        return '<div class="page-blanche">&nbsp;</div>'
+
     def _generate_toc(self) -> str:
         """
         Construit la table des matières à partir des titres relevés.
@@ -942,10 +1059,21 @@ class DocumentGenerator:
 
         faces, trouvees = generer_font_faces(self.dossier_polices())
         if trouvees:
-            print(f"🔤 Polices incorporées : {', '.join(trouvees)}")
+            print(f"🔤 Polices disponibles pour incorporation : "
+                  f"{', '.join(trouvees)}")
         else:
             print("⚠️  Aucune police dans le dossier fonts/ : rendu dépendant "
                   "des polices du système")
+        priorites = valider_priorites_polices(
+            getattr(self.config, 'FONT_PRIORITY', {})
+        )
+        if priorites:
+            resume = '; '.join(
+                f"{categorie}={', '.join(familles)}"
+                for categorie, familles in priorites.items()
+            )
+            print(f"🔠 Priorités typographiques : {resume}")
+        css = appliquer_priorites_polices(css, priorites)
         return faces + "\n" + css
 
     def dossier_polices(self) -> Path:
@@ -988,6 +1116,15 @@ class DocumentGenerator:
 
         if self.config.INCLUDE_COVER:
             parties.append(self._generate_cover_page())
+
+        # La page blanche n'a de sens qu'après une couverture. Sans elle, le
+        # document s'ouvrirait sur une page vide : on le signale plutôt que de
+        # l'ignorer en silence.
+        if self.config.BLANK_PAGE:
+            if self.config.INCLUDE_COVER:
+                parties.append(self._generate_blank_page())
+            else:
+                print("⚠️  blank_page sans page de garde : page blanche ignorée")
 
         if self.config.GENERATE_TOC:
             parties.append(self._generate_toc())
@@ -1068,19 +1205,25 @@ def generer_pdf(markdown: Sequence[str] = None,
                 racine=None,
                 html: str = None,
                 couverture: bool = True,
+                page_blanche: bool = False,
                 sommaire: bool = True,
                 numerote: bool = False,
                 tags: bool = False,
-                sauts: str = 'section') -> Path:
+                sauts: str = 'section',
+                priorites_polices: Dict[str, Sequence[str]] = None) -> Path:
     """
     Produit un PDF et retourne son chemin.
 
     markdown, code : listes de fichiers, dans l'ordre d'apparition.
     racine         : dossier au-delà duquel aucune ressource n'est chargée.
                      Par défaut, le dossier du premier Markdown fourni.
+    page_blanche   : insère une page blanche entre la couverture et la table
+                     des matières. Sans effet si couverture vaut False.
     sauts          : sauts de page automatiques — 'section' (chaque titre de
                      niveau 2), 'chapter' (chaque titre de niveau 1) ou 'none'.
     html           : chemin où sauvegarder le HTML intermédiaire (débogage).
+    priorites_polices : familles à placer avant les piles serif, sans et mono
+                        du CSS ; les polices installées dans l'OS sont admises.
 
     Lève ErreurGeneration si un fichier déclaré est absent, si une ressource
     sort de la racine, ou si le rendu échoue.
@@ -1096,10 +1239,12 @@ def generer_pdf(markdown: Sequence[str] = None,
     config.AUTHOR = auteur
     config.INSTITUTION = institution
     config.INCLUDE_COVER = couverture
+    config.BLANK_PAGE = page_blanche
     config.GENERATE_TOC = sommaire
     config.NUMBERED_CHAPTERS = numerote
     config.PDF_TAGS = tags
     config.PAGE_BREAKS = valider_sauts(sauts)
+    config.FONT_PRIORITY = valider_priorites_polices(priorites_polices)
     if date:
         config.DATE = str(date)
     if css:
@@ -1225,6 +1370,9 @@ fichier YAML, ou à défaut celui du premier Markdown.
     parser.add_argument('--tags', action='store_true',
                         help='Baliser le PDF pour l\'accessibilité')
     parser.add_argument('--no-cover', action='store_true', help='Ne pas inclure la page de garde')
+    parser.add_argument('--blank-page', action='store_true', dest='blank_page',
+                        help='Insérer une page blanche entre la page de garde '
+                             'et la table des matières')
     parser.add_argument('--no-toc', action='store_true', help='Ne pas inclure la table des matières')
     parser.add_argument('--example', action='store_true', help='Générer le PDF de démonstration')
     parser.add_argument('--create-examples', action='store_true',
@@ -1289,10 +1437,12 @@ fichier YAML, ou à défaut celui du premier Markdown.
             racine=racine,
             html=html,
             couverture=False if args.no_cover else fichier_config.get('cover', True),
+            page_blanche=args.blank_page or fichier_config.get('blank_page', False),
             sommaire=False if args.no_toc else fichier_config.get('toc', True),
             numerote=args.numbered or fichier_config.get('numbered', False),
             tags=args.tags or fichier_config.get('tags', False),
             sauts=valeur('page_breaks', 'section'),
+            priorites_polices=fichier_config.get('font_priority'),
         )
 
     except ErreurGeneration as e:

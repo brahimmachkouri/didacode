@@ -48,22 +48,39 @@ WeasyPrint s'appuie sur des bibliothèques système, notamment Pango et HarfBuzz
 
 ### Polices
 
-Les polices variables livrées dans `fonts/` sont **incorporées au PDF** : le document a alors le même rendu sur toutes les machines, y compris celles où aucune de ces polices n'est installée. Lorsqu'une famille fournit un véritable italique, deux fichiers suffisent : le fichier droit couvre les graisses normale et grasse, et le fichier italique couvre l'italique et l'italique grasse.
+Les polices livrées dans `fonts/` sont **incorporées au PDF lorsqu'elles sont utilisées** : le document a alors le même rendu sur toutes les machines, y compris celles où aucune de ces polices n'est installée. Source Serif 4, Source Sans 3 et JetBrains Mono sont fournies en fontes variables ; les autres familles utilisent les variantes statiques nécessaires.
 
 | Rôle | Police conseillée | Licence |
 |---|---|---|
-| Texte | [EB Garamond](https://fonts.google.com/specimen/EB+Garamond) | SIL OFL 1.1 |
-| Texte (alternative) | [Source Serif 4](https://fonts.google.com/specimen/Source+Serif+4) | SIL OFL 1.1 |
-| Code | [Roboto Mono](https://fonts.google.com/specimen/Roboto+Mono) | SIL OFL 1.1 |
-| Code (alternative) | [Fira Code](https://fonts.google.com/specimen/Fira+Code) | SIL OFL 1.1 |
+| Texte | [Source Serif 4](https://fonts.google.com/specimen/Source+Serif+4) | SIL OFL 1.1 |
+| Texte (alternative) | [Bitstream Charter](https://practicaltypography.com/charter.html) | Notice Bitstream/X Consortium |
+| Replis avec empattements | DejaVu Serif, Liberation Serif | DejaVu/Bitstream Vera, SIL OFL 1.1 |
+| Titres et interface | [Fira Sans](https://fonts.google.com/specimen/Fira+Sans) | SIL OFL 1.1 |
+| Titres (alternative) | [Source Sans 3](https://fonts.google.com/specimen/Source+Sans+3) | SIL OFL 1.1 |
+| Replis sans empattements | DejaVu Sans, Liberation Sans | DejaVu/Bitstream Vera, SIL OFL 1.1 |
+| Code | [Fira Mono](https://fonts.google.com/specimen/Fira+Mono) | SIL OFL 1.1 |
+| Code (alternative) | [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | SIL OFL 1.1 |
 
-Fira Code ne fournit pas de fichier italique officiel : son unique fichier variable couvre les graisses normale et grasse, tandis que WeasyPrint incline synthétiquement les passages demandés en italique. Source Serif 4 fournit bien un vrai italique variable.
+EB Garamond, Roboto Mono et Fira Code restent livrées comme alternatives. Fira Mono et Fira Code ne fournissent pas de fichier italique officiel : WeasyPrint incline synthétiquement les passages demandés en italique. Source Serif 4, Source Sans 3, Fira Sans et Bitstream Charter fournissent de vrais italiques.
 
-Les notices d'attribution et les textes complets des licences se trouvent dans `fonts/NOTICE.md` et `fonts/licenses/`. Les polices peuvent être utilisées, incorporées et redistribuées avec le logiciel conformément à la SIL Open Font License 1.1 ; elles ne passent pas sous la licence MIT du code.
+Les notices d'attribution et les textes complets des licences se trouvent dans `fonts/NOTICE.md` et `fonts/licenses/`. Les polices peuvent être utilisées, incorporées et redistribuées avec le logiciel conformément à leurs licences propres ; elles ne passent pas sous la licence MIT du code.
 
-Pour utiliser une autre famille, poser les fichiers dans `fonts/`, ajouter son préfixe au dictionnaire `FAMILLES` de `didacode.py`, modifier les variables `--police-texte` / `--police-code` en tête de `styles.css`, puis conserver sa licence et sa notice. Si le dossier est absent ou vide, l'outil le signale et retombe sur les polices du système, avec un rendu potentiellement différent.
+Pour choisir les familles sans modifier `styles.css`, utiliser `font_priority` dans le fichier YAML. Chaque rôle accepte un nom ou une liste ordonnée ; les familles demandées sont placées avant la pile du thème :
 
-Georgia, la police du prototype, n'est volontairement plus utilisée par défaut : elle appartient à Microsoft et ne peut être ni redistribuée ni incorporée dans un PDF.
+```yaml
+font_priority:
+  serif: DejaVu Serif
+  sans:
+    - DejaVu Sans
+    - Liberation Sans
+  mono: JetBrains Mono
+```
+
+Une famille n'a pas besoin d'être livrée dans `fonts/` : si elle est installée dans le système, WeasyPrint peut l'utiliser. Si elle est introuvable, la famille suivante est essayée, puis la pile normale de `styles.css`. Le PDF n'est donc reproductible sur une autre machine que si la police choisie est aussi incorporée ou installée sur cette machine.
+
+Pour incorporer une nouvelle famille, poser ses fichiers dans `fonts/`, ajouter son préfixe au dictionnaire `FAMILLES` de `didacode.py`, puis conserver sa licence et sa notice. Si le dossier est absent ou vide, l'outil le signale et utilise les polices disponibles dans le système, avec un rendu potentiellement différent.
+
+La Bitstream Charter livrée ici provient des fontes libres confiées au X Consortium, et non du fichier `Charter.ttc` de macOS. Les autres polices propriétaires du prototype (Georgia, Segoe UI, Helvetica Neue, Menlo et Consolas) ne figurent plus dans les piles : leur présence sur un système n'autorise pas à redistribuer leurs fichiers avec Didacode.
 
 ## 🚀 Utilisation rapide
 
@@ -143,14 +160,16 @@ Un fichier `exemple/config.exemple.yaml` commenté est livré avec Didacode : le
 | `code` | Fichier ou liste de fichiers de code à annexer |
 | `css` | Feuille de style à utiliser (défaut : `styles.css`) |
 | `fonts` | Dossier des polices à incorporer (défaut : `fonts/`) |
+| `font_priority` | Familles prioritaires pour `serif`, `sans` et `mono` |
 | `html` | Sauvegarde du HTML intermédiaire (débogage) |
 | `cover` | `false` pour supprimer la page de garde |
+| `blank_page` | `true` pour insérer une page blanche après la page de garde |
 | `toc` | `false` pour supprimer la table des matières |
 | `numbered` | `true` pour numéroter les titres |
 | `page_breaks` | Sauts de page automatiques : `section`, `chapter` ou `none` |
 | `tags` | `true` pour produire un PDF balisé (accessibilité) |
 
-Une clé inconnue déclenche un avertissement au lieu d'être ignorée en silence. `cover`, `toc`, `numbered` et `tags` n'acceptent que `true` ou `false` : toute autre valeur provoque une erreur, plutôt qu'un réglage inversé sans prévenir.
+Une clé inconnue déclenche un avertissement au lieu d'être ignorée en silence. `cover`, `blank_page`, `toc`, `numbered` et `tags` n'acceptent que `true` ou `false` : toute autre valeur provoque une erreur, plutôt qu'un réglage inversé sans prévenir.
 
 ### Cinq comportements à connaître
 
@@ -183,7 +202,7 @@ Le projet est confiné à une racine : le dossier du fichier YAML, ou à défaut
 | `exemple/config.exemple.yaml` | Modèle de configuration à copier et adapter |
 | `exemple/exercice1.py`, `exemple/exercice2.py` | Exemples de code annexé |
 | `exemple/assets/` | Ressources de la démonstration |
-| `fonts/` | Polices OFL incorporées, notices et licences propres |
+| `fonts/` | Polices OFL à incorporer, notices et licences propres |
 | `tests/` | Tests automatisés |
 | `CHANGELOG.md` | Journal des versions |
 | `requirements.txt` | Dépendances Python |
@@ -223,6 +242,7 @@ Un bloc PHP écrit sans `<?php` n'est pas colorié par Pygments. Les fichiers `.
 ### Mise en page
 
 - Page de garde minimaliste, sans numéro de page
+- Page blanche facultative après la page de garde, pour les documents reliés
 - Table des matières automatique, avec liens et numéros de page
 - Identifiants de titres uniques pour tout le document, même quand deux fichiers contiennent le même titre
 - Numérotation des pages, filet horizontal sur toute la largeur
@@ -243,6 +263,22 @@ Trois comportements, au choix, avec `page_breaks` dans le YAML ou `--page-breaks
 Le tout premier titre du document ne déclenche jamais de saut, pour éviter une page blanche après la table des matières. Dans tous les modes, un titre n'est jamais laissé seul en bas de page.
 
 Le mode `section` combiné aux blocs insécables (encadrés, tableaux, blocs de code) produit parfois des pages creuses : un encadré qui ne tient pas en bas de page bascule entier, et la section suivante démarre de toute façon sur une nouvelle page. Passer en `chapter` est la réponse la plus simple.
+
+## 📃 Page blanche après la page de garde
+
+```bash
+didacode -m cours.md --blank-page -o cours.pdf
+```
+
+ou, dans le YAML :
+
+```yaml
+blank_page: true
+```
+
+Une page rigoureusement vide s'intercale alors entre la page de garde et la table des matières : ni en-tête, ni numéro, ni filet. C'est la convention des documents reliés, où la couverture occupe un recto seul et s'ouvre sur un verso vierge.
+
+La page compte dans la pagination, comme au tirage : la table des matières passe en page 3 et ses renvois suivent. Demander cette page sans page de garde n'a pas de sens — le document s'ouvrirait sur du vide : l'outil le signale et ne l'insère pas.
 
 ## 📝 Syntaxe Markdown spéciale
 
@@ -290,7 +326,7 @@ except ErreurGeneration as e:
 
 | Réglage | Où |
 |---|---|
-| Polices | variables `--police-texte` et `--police-code` — section 2 |
+| Polices prioritaires | clé YAML `font_priority` |
 | Couleurs | variables `:root` — section 2 |
 | Taille du code | `pre { font-size }` — section 8 |
 | Classes de coloration | section 9 |

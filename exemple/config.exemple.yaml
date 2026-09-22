@@ -52,14 +52,25 @@ output: manuel.pdf
 # Dossier des polices à incorporer. Par défaut : le fonts/ livré avec le script.
 # fonts: fonts
 
+# Familles à essayer avant les piles définies dans styles.css. Un seul nom ou
+# une liste ordonnée sont acceptés. Les fontes peuvent venir du dossier fonts/
+# ou être installées dans le système ; une fonte absente est simplement sautée.
+# font_priority:
+#   serif: DejaVu Serif
+#   sans:
+#     - DejaVu Sans
+#     - Liberation Sans
+#   mono: JetBrains Mono
+
 # Sauvegarde du HTML intermédiaire, utile pour déboguer la mise en page.
 # html: debug.html
 
 
 # --- Structure ---------------------------------------------------------------
 
-# Ces quatre clés attendent true ou false, sans guillemets.
+# Ces cinq clés attendent true ou false, sans guillemets.
 # cover: true        # page de garde
+# blank_page: false  # page blanche entre la page de garde et le sommaire
 # toc: true          # table des matières
 # numbered: false    # numérotation des titres (Chapitre 1 —, 1.1, 1.1.1)
 
