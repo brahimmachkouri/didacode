@@ -247,20 +247,29 @@ Le projet est confiné à une racine : le dossier du fichier YAML, ou à défaut
 
 ### Palette de couleurs
 
-- **Bleu nuit** (#1B2A41) : titres principaux
-- **Violet** (#6A1B9A) : fonctions, concepts importants
-- **Orange** (#E67E22) : avertissements
-- **Jaune doux** (#F4D03F) : rappels pédagogiques
-- **Gris** (#777777) : commentaires
+La palette éditoriale vient des variables `:root` de `styles.css` :
+
+| Usage | Trait ou texte | Fond |
+|---|---|---|
+| Titres, liens et accent général | bleu `#1f4e79` | — |
+| Information (`[INFO]`) | bleu `#1f6feb` | bleu pâle `#eef4fd` |
+| À retenir (`[IMPORTANT]`) | violet `#6d28d9` | violet pâle `#f4f0fe` |
+| Attention (`[WARNING]`) | ocre `#b45309` | crème `#fdf5e7` |
+| Rappel (`[REMINDER]`) et correction | vert canard `#0f766e` | vert pâle `#eefaf8` |
+| Texte principal | `#1a1a1a` | — |
+| Texte secondaire et discret | `#4a4a4a` et `#767676` | — |
+
+Les encadrés se distinguent aussi par leur filet — fin, épais, double ou pointillé — afin de rester identifiables en niveaux de gris.
 
 ### Coloration syntaxique
 
 Le code est coloré par Pygments, selon les règles `.highlight` définies dans `styles.css` :
 
-- mots-clés en bleu gras ;
-- chaînes en vert ;
-- commentaires en gris italique ;
-- fonctions en violet.
+- mots-clés en bleu `#1f4e79`, généralement en gras ;
+- chaînes en vert `#1a6b52` ;
+- commentaires en gris `#6a737d` et en italique ;
+- fonctions et classes en violet `#5a3ba8` ;
+- erreurs en rouge `#a03030`, sur fond `#fdecec` lorsqu'un fond est nécessaire.
 
 Le langage est déduit de l'extension pour les fichiers passés à `-c`, et du mot qui suit les triples accents graves pour les blocs Markdown. Tout identifiant connu de Pygments est accepté, y compris `c++`, `objective-c` ou `shell-session`, ainsi que les clôtures `~~~` et les blocs à attributs. **Un bloc sans langage indiqué est rendu sans coloration** : aucun langage n'est deviné.
 
