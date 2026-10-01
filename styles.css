@@ -161,9 +161,12 @@ h3 a[href^="http"]::after {
 }
 
 hr {
+    /* En Markdown, une ligne « --- » est un séparateur éditorial : elle
+       termine la page courante sans dessiner le filet HTML habituel. */
+    break-after: page;
     border: none;
-    border-top: 0.6pt solid var(--filet);
-    margin: 1.8em 0;
+    height: 0;
+    margin: 0;
 }
 
 img {

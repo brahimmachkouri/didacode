@@ -219,6 +219,31 @@ class TestPagination(DossierTemporaire):
         for mode in dc.SAUTS_VALIDES:
             self.assertEqual(dc.valider_sauts(mode.upper()), mode)
 
+    def test_trois_tirets_creent_un_saut_sans_filet(self):
+        """Le <hr> de Markdown sépare deux pages mais reste invisible."""
+        from weasyprint import HTML
+
+        self.ecrire('saut.md', 'Avant.\n\n---\n\nAprès.\n')
+        config = dc.Config()
+        config.RACINE = self.racine
+        config.INCLUDE_COVER = False
+        config.GENERATE_TOC = False
+        config.PAGE_BREAKS = 'none'
+        doc = dc.DocumentGenerator(config)
+        doc.add_markdown_file(self.racine / 'saut.md')
+
+        html = doc.generate_html()
+        regle_hr = html.split('hr {', 1)[1].split('}', 1)[0]
+
+        self.assertIn('<hr', html)
+        self.assertIn('break-after: page', regle_hr)
+        self.assertIn('border: none', regle_hr)
+        self.assertNotIn('border-top', regle_hr)
+        self.assertEqual(
+            len(HTML(string=html, base_url=str(self.racine)).render().pages),
+            2,
+        )
+
 
 class TestPageBlanche(DossierTemporaire):
 
